@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="79dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/textView2"
+                android:layout_width="123dp"
+                android:layout_height="wrap_content"
+                android:text="Recording Title" />
+
+            <EditText
+                android:id="@+id/TITLE"
+                android:layout_width="203dp"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:inputType="textPersonName"
+                android:text="some note" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="329dp"
+            android:layout_height="61dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/textView"
+                android:layout_width="274dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Max. Recording Time (minutes)" />
+
+            <EditText
+                android:id="@+id/MAX_RECORDING_TIME"
+                android:layout_width="93dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ems="10"
+                android:inputType="textPersonName|number"
+                android:text="1" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/textView1"
+                android:layout_width="256dp"
+                android:layout_height="wrap_content"
+                android:text="Pressure Samples per Second" />
+
+            <EditText
+                android:id="@+id/PRESSURE_SAMPLES_PER_SECOND"
+                android:layout_width="71dp"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:inputType="numberDecimal"
+                android:text="20" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="330dp"
+            android:layout_height="88dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/textView4"
+                android:layout_width="237dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Speed Samples per Second" />
+
+            <EditText
+                android:id="@+id/SPEED_SAMPLES_PER_SECOND"
+                android:layout_width="52dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ems="10"
+                android:inputType="textPersonName|numberDecimal"
+                android:text="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="51dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/START_RECORDING"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Record" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="61dp"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/RECORDING_LABEL"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Recording..." />
+
+                <ProgressBar
+                    android:id="@+id/PROGRESS_BAR"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:indeterminate="false" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/FINISH_RECORDING"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Finish" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

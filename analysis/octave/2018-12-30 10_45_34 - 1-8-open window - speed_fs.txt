@@ -1,0 +1,4 @@
+# Recording timestamp: 2018-12-30 10:45:34
+# Recording title: 1-8-open window
+# field: speed_fs
+1.0

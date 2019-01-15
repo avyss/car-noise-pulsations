@@ -1,0 +1,4 @@
+# Recording timestamp: 2019-01-05 09:31:22
+# Recording title: ups and downs
+# field: speed_fs
+1.0
