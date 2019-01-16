@@ -58,14 +58,12 @@ abstract public class AbstractSampleCollector {
         // some samples were captured
         float [] samples = new float[lastSampleIndex + 1];
 
-        float prevValue = 0.0f;
         for (int i = 0; i < lastSampleIndex + 1; i++) {
             if (counts[i] == 0) {
-                samples[i] = prevValue;
+                samples[i] = Float.NaN;
             } else {
                 float currValue = sums[i] / counts[i];
                 samples[i] = currValue;
-                prevValue  = currValue;
             }
         }
 
