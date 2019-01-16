@@ -63,7 +63,7 @@
                 android:id="@+id/textView1"
                 android:layout_width="256dp"
                 android:layout_height="wrap_content"
-                android:text="Pressure Samples per Second" />
+                android:text="Pressure Samples per Second (Hz)" />
 
             <EditText
                 android:id="@+id/PRESSURE_SAMPLES_PER_SECOND"
@@ -84,7 +84,7 @@
                 android:layout_width="237dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Speed Samples per Second" />
+                android:text="Speed Samples per Second (Hz)" />
 
             <EditText
                 android:id="@+id/SPEED_SAMPLES_PER_SECOND"
