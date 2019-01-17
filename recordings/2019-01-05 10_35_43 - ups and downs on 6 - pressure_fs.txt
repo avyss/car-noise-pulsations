@@ -1,4 +1,0 @@
-# Recording timestamp: 2019-01-05 10:35:43
-# Recording title: ups and downs on 6
-# field: pressure_fs
-50.0

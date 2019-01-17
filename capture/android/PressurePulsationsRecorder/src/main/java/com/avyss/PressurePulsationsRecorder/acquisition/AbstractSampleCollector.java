@@ -1,6 +1,5 @@
 package com.avyss.PressurePulsationsRecorder.acquisition;
 
-import android.os.SystemClock;
 import android.util.Log;
 
 abstract public class AbstractSampleCollector {
@@ -21,7 +20,7 @@ abstract public class AbstractSampleCollector {
 
         this.samplesPerSecond = samplesPerSecond;
         this.maxSamples = Math.round(maxRecordingLengthSec * samplesPerSecond);
-        this.recStartTimeNanos = SystemClock.elapsedRealtimeNanos();
+        this.recStartTimeNanos = recStartTimeNanos;
 
         firstSampleTimeNanos = -1;
         lastSampleIndex = -1;
@@ -36,14 +35,6 @@ abstract public class AbstractSampleCollector {
         collectionFinished = true;
     }
 
-    public boolean hasSamples() {
-        if (!collectionFinished) {
-            throw new IllegalStateException("samples are still being collected, call stopCollecting() first");
-        }
-
-        return (firstSampleTimeNanos != -1);
-    }
-
     public float [] getCollectedSamples() {
 
         if (!collectionFinished) {
@@ -52,7 +43,7 @@ abstract public class AbstractSampleCollector {
 
         // no samples captured?
         if (lastSampleIndex < 0) {
-            return null;
+            return new float[0];
         }
 
         // some samples were captured
@@ -102,7 +93,7 @@ abstract public class AbstractSampleCollector {
 
         int sampleIndex = Math.round(elapsedSeconds * samplesPerSecond);
 
-        Log.d("received", "index " + sampleIndex + " value " + sampleValue);
+        Log.v("received", "index " + sampleIndex + " value " + sampleValue);
 
         if (sampleIndex < 0 || sampleIndex >= maxSamples) {
             return null;

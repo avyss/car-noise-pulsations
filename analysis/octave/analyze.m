@@ -1,16 +1,18 @@
-function analyze(file_title, timeRange)
+function analyze(fileName, timeRange)
 
 if nargin() < 2
   timeRange = [-Inf, Inf];
   
   if nargin() < 1
-    file_title = '../../recordings/2019-01-16 09_12_59 - regular drive';
+    fileName = '2019-01-17 11_39_00 - driving around';
+    fileName = ['../../recordings/' fileName '.zip'];
   endif
 endif
 
-display(['Starting analysys of: ' file_title]);
+display(['Starting analysys of: ' fileName]);
+fileTitle = extractTitle(fileName);
 
-data = load_recording_data(file_title);
+data = load_recording_data(fileName, fileTitle);
 
 Fs = data.pressureFs;      
 
@@ -66,9 +68,12 @@ hold on;
 pkg load signal;
 #specgram(pressureValues, 2^nextpow2(window), Fs, window, window-step);
 [specS, specF, specT] = specgram(pressureValues, 2^nextpow2(window), Fs, window, window-step);
+specT ####
 specT = specT + pressureTimes(1);
 specS = abs(specS);
-specS = specS / max(specS(:));           # normalize magnitude so that max is 0 dB.
+if (max(specS(:)) != 0)
+  specS = specS / max(specS(:));   # normalize magnitude so that max is 0 dB.
+endif
 specS = max(specS, 10^(-40/10));   # clip below -40 dB.
 specS = min(specS, 10^(-3/10));    # clip above -3 dB.
 imagesc(specT, specF, log(specS));    # display in log scale
@@ -77,7 +82,7 @@ set(gca, "ydir", "normal"); # put the 'y' direction in the correct direction
 axis([min(pressureTimes) max(pressureTimes)]);
 xlabel('Time [sec]')
 ylabel('Frequency [Hz]')
-title(strrep(file_title,'_',':'));
+title(strrep(fileTitle,'_',':'));
 grid on;
 
 # mark frequency with maximum intensity for each window
@@ -109,8 +114,20 @@ plot(plotSpeed, pulsationsFrequencies, 'x');
 xlabel('speed');
 ylabel('pulsations F');
 
-display(['Finished analysys of: ' file_title]);
+display(['Finished analysys of: ' fileName]);
 
+endfunction
+
+function fileTitle = extractTitle(fileName)
+    fileExtPos = strfind(fileName, '.zip');
+    if size(fileExtPos) == 0
+        error('recording file name must end with .zip');
+        return;
+    endif
+    
+    lastSlashPos = max([0, strfind(fileName, '/'), strfind(fileName, '\\')]);
+    
+    fileTitle = fileName(lastSlashPos + 1 : fileExtPos - 1);
 endfunction
 
 function r = overrideNaNs(v)

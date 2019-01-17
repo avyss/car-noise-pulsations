@@ -1,4 +1,0 @@
-# Recording timestamp: 2019-01-01 15:41:08
-# Recording title: both rear windows open
-# field: pressure_fs
-50.0

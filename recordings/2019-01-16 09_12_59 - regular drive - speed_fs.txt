@@ -1,4 +1,0 @@
-# Recording timestamp: 2019-01-16 09:12:59
-# Recording title: regular drive
-# field: speed_fs
-1.0
