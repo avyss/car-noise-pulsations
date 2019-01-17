@@ -25,6 +25,7 @@ import com.avyss.PressurePulsationsRecorder.acquisition.RecordingDetails;
 import com.avyss.PressurePulsationsRecorder.acquisition.SpeedCollectingListener;
 import com.avyss.PressurePulsationsRecorder.exporting.Exporter;
 
+import java.io.IOException;
 import java.util.Date;
 
 public class MainActivity extends Activity {
@@ -197,11 +198,17 @@ public class MainActivity extends Activity {
         recDetails.setTitle(title);
 
         Exporter exporter = new Exporter(MainActivity.this);
-        exporter.exportResults(
-                getBaseContext(),
-                recDetails,
-                pressureCollector,
-                speedCollector);
+
+        try {
+            exporter.exportResults(
+                    getBaseContext(),
+                    recDetails,
+                    pressureCollector,
+                    speedCollector);
+        } catch (IOException e) {
+            Log.e("export", "can't export results", e);
+            throw new RuntimeException("can't export results", e);
+        }
 
         pressureCollector = null;
         speedCollector = null;

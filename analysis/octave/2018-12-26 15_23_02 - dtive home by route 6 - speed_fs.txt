@@ -1,4 +1,0 @@
-# Recording timestamp: 2018-12-26 15:23:02
-# Recording title: dtive home by route 6
-# field: speed_fs
-1.0

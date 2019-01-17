@@ -1,29 +1,49 @@
-function analyze
-#file_title = '2018-12-25 16_47_25 good sample';
-#file_title = '2018-12-26 15_23_02 - dtive home by route 6';
-#file_title = '2018-12-28 11_19_55 - half-open window';
-#file_title = '2018-12-30 10_35_21 - quarter-open window';
-#file_title = '2019-01-05 10_35_43 - ups and downs on 6';
+function analyze(fileName, timeRange)
 
-file_title = '2019-01-05 09_31_22 - ups and downs';
+if nargin() < 2
+  timeRange = [-Inf, Inf];
+  
+  if nargin() < 1
+    fileName = '2019-01-17 11_39_00 - driving around';
+    fileName = ['../../recordings/' fileName '.zip'];
+  endif
+endif
 
-display(['Starting analysys of: ' file_title]);
+display(['Starting analysys of: ' fileName]);
+fileTitle = extractTitle(fileName);
 
-data = load_recording_data(file_title);
+data = load_recording_data(fileName, fileTitle);
 
 Fs = data.pressureFs;      
 
-pressureTimes = data.pressureSamples(:,1);
+pressureTimes  = data.pressureSamples(:,1);
 pressureValues = data.pressureSamples(:,2);
+useIndexes = find((pressureTimes >= timeRange(1)) 
+                & (pressureTimes <= timeRange(2)));
+pressureTimes  = pressureTimes(useIndexes);
+pressureValues = pressureValues(useIndexes);
+
+hasSpeedData = (length(data.speedSamples) > 0);
+if hasSpeedData
+  speedTimes = data.speedSamples(:,1);
+  speedValues = data.speedSamples(:,2) * (60*60/1000);
+  useIndexes = find((speedTimes >= timeRange(1)) 
+                  & (speedTimes <= timeRange(2)));
+  speedTimes  = speedTimes(useIndexes);
+  speedValues = speedValues(useIndexes);
+endif
 
 # Determine oversampling rate in the measurements: 
 #   some data point are just duplications of the previous points, so
 #   sub-sample the signal accordingly
 nTotalSamples = length(pressureValues);
-nonDuplicateSamples = pressureValues([1 : nTotalSamples-1]) - pressureValues([2 : nTotalSamples]);
-nNonDuplicates = length(find(nonDuplicateSamples) != 0);
-subsampling_rate = round(length(pressureValues) / nNonDuplicates);
-display(['Estimated duplication rate in input pressure values: ', num2str(subsampling_rate)]);
+nanIdx = find(isnan(pressureValues));
+nMeaningfulSamples = nTotalSamples - length(nanIdx);
+subsampling_rate = round(nTotalSamples / nMeaningfulSamples);
+display(['Estimated decimation rate for input pressure values: ', num2str(subsampling_rate)]);
+
+# replace NaNs in the measurements with "last-known" values
+pressureValues = overrideNaNs(pressureValues);
 
 pressureValues = pressureValues([1 : subsampling_rate : length(pressureValues)]);
 pressureTimes  = pressureTimes([1 : subsampling_rate : length(pressureTimes)]);
@@ -40,36 +60,46 @@ window = ceil(window_sec*Fs);
 step = ceil(window/3);
 
 figure(1);
-hold off;
+clear figure;
 subplot(2, 1, 1);
+hold on;
 
 # plot spectrogram
 pkg load signal;
-specgram(pressureValues, 2^nextpow2(window), Fs, window, window-step);
+#specgram(pressureValues, 2^nextpow2(window), Fs, window, window-step);
 [specS, specF, specT] = specgram(pressureValues, 2^nextpow2(window), Fs, window, window-step);
+specT ####
+specT = specT + pressureTimes(1);
+specS = abs(specS);
+if (max(specS(:)) != 0)
+  specS = specS / max(specS(:));   # normalize magnitude so that max is 0 dB.
+endif
+specS = max(specS, 10^(-40/10));   # clip below -40 dB.
+specS = min(specS, 10^(-3/10));    # clip above -3 dB.
+imagesc(specT, specF, log(specS));    # display in log scale
+set(gca, "ydir", "normal"); # put the 'y' direction in the correct direction
+             
 axis([min(pressureTimes) max(pressureTimes)]);
 xlabel('Time [sec]')
 ylabel('Frequency [Hz]')
-title(strrep(file_title,'_',':'));
+title(strrep(fileTitle,'_',':'));
 grid on;
-hold on;
 
 # mark frequency with maximum intensity for each window
-specS = abs(specS);
 minFreqCutoffIdx = round(length(specF) / 4);
 [m,im] = max(specS(minFreqCutoffIdx:length(specF), :));
 pulsationsFrequencies = specF(im + minFreqCutoffIdx - 1);
 plot(specT, pulsationsFrequencies, 'o-c');
 
 # plot speed (if available)
-if length(data.speedSamples) == 0
+if !hasSpeedData
   display('No speed data, further processing not possible');
   return;
 endif
 
 subplot(2, 1, 2);
-speedTimes = data.speedSamples(:,1);
-speedValues = data.speedSamples(:,2) * (60*60/1000);
+hold on;
+
 plot(speedTimes, speedValues, '^-');
 axis([min(pressureTimes) max(pressureTimes)]);
 xlabel('Time [sec]');
@@ -77,9 +107,43 @@ ylabel('Speed [km/h]');
 grid on;
 
 figure(2);
-
-plot(interp1(speedTimes, speedValues, specT), pulsationsFrequencies, 'x');
+clear figure;
+hold on;
+plotSpeed = interp1(speedTimes, speedValues, specT);
+plot(plotSpeed, pulsationsFrequencies, 'x');
 xlabel('speed');
 ylabel('pulsations F');
 
-display(['Finished analysys of: ' file_title]);
+display(['Finished analysys of: ' fileName]);
+
+endfunction
+
+function fileTitle = extractTitle(fileName)
+    fileExtPos = strfind(fileName, '.zip');
+    if size(fileExtPos) == 0
+        error('recording file name must end with .zip');
+        return;
+    endif
+    
+    lastSlashPos = max([0, strfind(fileName, '/'), strfind(fileName, '\\')]);
+    
+    fileTitle = fileName(lastSlashPos + 1 : fileExtPos - 1);
+endfunction
+
+function r = overrideNaNs(v)
+  r = v;
+  
+  firstNotNanIdx = min(find(!isnan(v)));
+  if length(firstNotNanIdx) == 0
+    return;
+  endif
+  
+  r(1:firstNotNanIdx) = r(firstNotNanIdx);
+  
+  for i = firstNotNanIdx + 1 : size(r)
+    if isnan(r(i))
+        r(i) = r(i-1);
+    endif
+  endfor
+  
+endfunction
