@@ -4,7 +4,7 @@ if nargin() < 2
   timeRange = [-Inf, Inf];
   
   if nargin() < 1
-    fileName = '2019-01-17 11_39_00 - driving around';
+    fileName = '2019-02-17 23_28_42 - driving around';
     fileName = ['../../recordings/' fileName '.zip'];
   endif
 endif
@@ -68,7 +68,6 @@ hold on;
 pkg load signal;
 #specgram(pressureValues, 2^nextpow2(window), Fs, window, window-step);
 [specS, specF, specT] = specgram(pressureValues, 2^nextpow2(window), Fs, window, window-step);
-specT ####
 specT = specT + pressureTimes(1);
 specS = abs(specS);
 if (max(specS(:)) != 0)

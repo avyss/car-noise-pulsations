@@ -208,9 +208,9 @@ class MainActivity : Activity() {
 
     companion object {
 
-        private val DEFAULT_RECORDING_TITLE = "driving around"
-        private val DEFAULT_MAX_SAMPLING_TIME_MINUTES = 60
-        private val DEFAULT_PRESSURE_SAMPLES_PER_SECOND = 60.0f
-        private val DEFAULT_SPEED_SAMPLES_PER_SECOND = 1.0f
+        private const val DEFAULT_RECORDING_TITLE = "driving around"
+        private const val DEFAULT_MAX_SAMPLING_TIME_MINUTES = 60
+        private const val DEFAULT_PRESSURE_SAMPLES_PER_SECOND = 60.0f
+        private const val DEFAULT_SPEED_SAMPLES_PER_SECOND = 1.0f
     }
 }

@@ -14,13 +14,13 @@ import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.ArrayList
-import java.util.Collections
 import java.util.Locale
 
 class Exporter(private val parentActivity: Activity) {
 
     companion object {
         private const val FILE_SHARING_AUTH_NAME = "com.avyss.PressurePulsationsRecorder.recordingSharing"
+        private const val FORMAT_VERSION = "1, 0"
     }
 
     @Throws(IOException::class)
@@ -32,18 +32,14 @@ class Exporter(private val parentActivity: Activity) {
 
         val zipFileName = generateFileName(recDetails)
 
-        val zp = ZipPacker(parentActivity.baseContext.cacheDir, zipFileName)
-        try {
-            zp.addSamples("pressure", pressureCollector)
-            zp.addSamples("speed", speedCollector)
-        } finally {
-            zp.close()
+        val zp = ZipPacker(parentActivity.baseContext.cacheDir, zipFileName).use{
+            it.addValues("format", listOf(FORMAT_VERSION).listIterator())
+            it.addSamples("pressure", pressureCollector)
+            it.addSamples("speed", speedCollector)
+
+            val zipFile = it.zipFile
+            shareResults(context, listOf(zipFile))
         }
-
-        val zipFile = zp.zipFile
-
-        shareResults(context, listOf(zipFile))
-
     }
 
     private fun generateFileName(recDetails: RecordingDetails): String {

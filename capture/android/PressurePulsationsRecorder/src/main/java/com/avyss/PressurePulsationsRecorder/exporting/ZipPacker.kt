@@ -8,12 +8,9 @@ import java.io.BufferedOutputStream
 import java.io.BufferedWriter
 import java.io.Closeable
 import java.io.File
-import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStreamWriter
-import java.util.Collections
-import java.util.function.Consumer
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -41,6 +38,11 @@ class ZipPacker(
     }
 
     @Throws(IOException::class)
+    fun addValues(collectorName: String, values: Iterator<String>) {
+        writePart(collectorName, values.iterator())
+    }
+
+    @Throws(IOException::class)
     fun addSamples(collectorName: String, sampleCollector: AbstractSampleCollector) {
         val samplingRateLines = listOf(java.lang.Float.toString(sampleCollector.samplingRate))
 
@@ -59,7 +61,7 @@ class ZipPacker(
                 val time = i.toFloat() / sampleCollector.samplingRate + firstSampleTimeDelay
                 val value = samples[i]
                 i++
-                return java.lang.Float.toString(time) + "," + java.lang.Float.toString(value)
+                return java.lang.Float.toString(time) + ", " + java.lang.Float.toString(value)
             }
         }
 
