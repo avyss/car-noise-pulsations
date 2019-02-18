@@ -49,19 +49,26 @@ class ZipPacker(
         writePart(collectorName + "_fs", samplingRateLines.iterator())
 
         val samples = sampleCollector.collectedSamples
+        val nValuesPerSample = samples.size
+        val nSamples = samples[0].size
+
         val samplesLines = object : Iterator<String> {
             private var i = 0
             private val firstSampleTimeDelay = sampleCollector.firstSampleTimeDelay()
 
             override fun hasNext(): Boolean {
-                return i < samples.size
+                return i < nSamples
             }
 
             override fun next(): String {
                 val time = i.toFloat() / sampleCollector.samplingRate + firstSampleTimeDelay
-                val value = samples[i]
+
+                var line = time.toString()
+                for (n in 0 until nValuesPerSample) {
+                    line += ", " + samples[n][i].toString()
+                }
                 i++
-                return java.lang.Float.toString(time) + ", " + java.lang.Float.toString(value)
+                return line
             }
         }
 

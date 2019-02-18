@@ -8,10 +8,14 @@ class SpeedCollectingListener(
         samplesPerSecond: Float,
         maxRecordingLengthSec: Int,
         recStartTimeNanos: Long
-) : AbstractSampleCollector(samplesPerSecond, maxRecordingLengthSec, recStartTimeNanos), LocationListener {
+) : AbstractSampleCollector(2, samplesPerSecond, maxRecordingLengthSec, recStartTimeNanos), LocationListener {
+
+    companion object {
+        val COLLECTED_VALUES_NAMES: Array<String> = arrayOf("time", "speed", "bearing")
+    }
 
     override fun onLocationChanged(location: Location) {
-        onSampleAcquired(location.speed, location.elapsedRealtimeNanos)
+        onSampleAcquired(location.elapsedRealtimeNanos, location.speed, location.bearing)
     }
 
     override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {}
