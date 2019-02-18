@@ -1,8 +1,8 @@
 function data = load_recording_data(fileName, fileTitle)
   subDir = fileTitle;
-  unzipFilesDir = [tempdir() '/' subDir];
+  unzipFilesDir = [tempdir(), filesep(), subDir];
   if exist(unzipFilesDir)
-    delete([unzipFilesDir '/*.*']);
+    delete([unzipFilesDir, filesep(), '*.*']);
   else
     mkdir(unzipFilesDir);
   endif

@@ -4,8 +4,12 @@ if nargin() < 2
   timeRange = [-Inf, Inf];
   
   if nargin() < 1
-    fileName = '2019-02-17 23_28_42 - driving around';
-    fileName = ['../../recordings/' fileName '.zip'];
+    [fname, fpath] = uigetfile('../../recordings/');
+    if (fname == 0) 
+        display('processing canceled')
+        return;
+    endif
+    fileName = [fpath, fname];
   endif
 endif
 
@@ -124,7 +128,7 @@ function fileTitle = extractTitle(fileName)
         return;
     endif
     
-    lastSlashPos = max([0, strfind(fileName, '/'), strfind(fileName, '\\')]);
+    lastSlashPos = max([0, strfind(fileName, '/'), strfind(fileName, '\')]);
     
     fileTitle = fileName(lastSlashPos + 1 : fileExtPos - 1);
 endfunction
