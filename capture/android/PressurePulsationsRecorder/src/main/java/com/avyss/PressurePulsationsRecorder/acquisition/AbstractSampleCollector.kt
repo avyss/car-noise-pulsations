@@ -61,10 +61,10 @@ abstract class AbstractSampleCollector(
 
     }
 
-    protected fun onSampleAcquired(sampleValue: Float, timestamp: Long): Float? {
+    protected fun onSampleAcquired(sampleValue: Float, timestamp: Long) {
 
         if (collectionFinished) {
-            return null
+            return
         }
 
         if (firstSampleTimeNanos == -1L) {
@@ -78,14 +78,13 @@ abstract class AbstractSampleCollector(
         Log.v("received", "index $sampleIndex value $sampleValue")
 
         if (sampleIndex < 0 || sampleIndex >= maxSamples) {
-            return null
+            return
         }
 
         sums[sampleIndex] += sampleValue
         counts[sampleIndex]++
 
         lastSampleIndex = sampleIndex
-        return elapsedSeconds
     }
 
     companion object {

@@ -9,8 +9,7 @@ import java.util.function.Consumer
 class PressureCollectingListener(
         samplesPerSecond: Float,
         maxRecordingLengthSec: Int,
-        recStartTimeNanos: Long,
-        private val progressListener: Consumer<Int>
+        recStartTimeNanos: Long
 ) : AbstractSampleCollector(samplesPerSecond, maxRecordingLengthSec, recStartTimeNanos), SensorEventListener {
 
     private var lastSecondsProgress: Int = 0
@@ -20,15 +19,7 @@ class PressureCollectingListener(
             return
         }
 
-        val elapsedSeconds = onSampleAcquired(event.values[0], event.timestamp)
-
-        if (elapsedSeconds != null) {
-            val currSecondsProgress = Math.floor(elapsedSeconds.toDouble()).toInt()
-            if (lastSecondsProgress != currSecondsProgress) {
-                lastSecondsProgress = currSecondsProgress
-                progressListener.accept(currSecondsProgress)
-            }
-        }
+        onSampleAcquired(event.values[0], event.timestamp)
     }
 
     override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}

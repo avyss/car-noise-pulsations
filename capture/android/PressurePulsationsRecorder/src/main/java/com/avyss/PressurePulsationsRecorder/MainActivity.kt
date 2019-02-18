@@ -8,6 +8,7 @@ import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.location.LocationManager
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.os.PowerManager
 import android.os.PowerManager.WakeLock
 import android.os.SystemClock
@@ -28,6 +29,7 @@ import com.avyss.PressurePulsationsRecorder.exporting.Exporter
 import java.io.IOException
 import java.util.Date
 import java.util.function.Consumer
+import kotlin.math.roundToInt
 
 class MainActivity : Activity() {
 
@@ -48,6 +50,7 @@ class MainActivity : Activity() {
     private var startRecordingButton: Button? = null
     private var finishRecordingButton: Button? = null
     private var recordingLabel: TextView? = null
+    private var countdownTimer: CountDownTimer? = null
     private var progressBar: ProgressBar? = null
 
     public override fun onCreate(savedInstanceState: Bundle?) {
@@ -115,9 +118,9 @@ class MainActivity : Activity() {
     }
 
     private fun doStartRecording() {
-        val maxRecordingLentghSec = Integer.parseInt(maxRecordingLengthText!!.text.toString()) * 60
-        val pressureSamplesPerSecond = java.lang.Float.parseFloat(pressureSamplesPerSecondText!!.text.toString())
-        val speedSamplesPerSecond = java.lang.Float.parseFloat(speedSamplesPerSecondText!!.text.toString())
+        val maxRecordingLengthSec = ((maxRecordingLengthText!!.text.toString()).toFloat() * 60).roundToInt()
+        val pressureSamplesPerSecond = (pressureSamplesPerSecondText!!.text.toString()).toFloat()
+        val speedSamplesPerSecond = (speedSamplesPerSecondText!!.text.toString()).toFloat()
 
         recDetails = RecordingDetails(Date())
         val recStartTimeNanos = SystemClock.elapsedRealtimeNanos()
@@ -126,9 +129,8 @@ class MainActivity : Activity() {
 
         pressureCollector = PressureCollectingListener(
                 pressureSamplesPerSecond,
-                maxRecordingLentghSec,
-                recStartTimeNanos,
-                Consumer { progressSeconds -> progressBar!!.progress = progressSeconds }
+                maxRecordingLengthSec,
+                recStartTimeNanos
         )
 
         sensorManager!!.registerListener(
@@ -138,7 +140,7 @@ class MainActivity : Activity() {
 
         speedCollector = SpeedCollectingListener(
                 speedSamplesPerSecond,
-                maxRecordingLentghSec,
+                maxRecordingLengthSec,
                 recStartTimeNanos
         )
 
@@ -159,10 +161,23 @@ class MainActivity : Activity() {
         speedSamplesPerSecondText!!.isEnabled = false
         startRecordingButton!!.isEnabled = false
         finishRecordingButton!!.isEnabled = true
-        progressBar!!.max = maxRecordingLentghSec
+        progressBar!!.max = maxRecordingLengthSec
         recordingLabel!!.isEnabled = true
         progressBar!!.progress = 0
         progressBar!!.isEnabled = true
+
+        val maxProgressMillis = maxRecordingLengthSec * 1000L
+
+        countdownTimer = object: CountDownTimer(maxProgressMillis, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                progressBar?.progress = ((maxProgressMillis - millisUntilFinished)/1000).toInt()
+            }
+            override fun onFinish() {
+                doStopRecording()
+            }
+        }
+        countdownTimer!!.start()
+
     }
 
     private fun doStopRecording() {
@@ -196,6 +211,9 @@ class MainActivity : Activity() {
         speedCollector = null
         recDetails = null
 
+        countdownTimer?.cancel()
+        countdownTimer = null
+
         maxRecordingLengthText!!.isEnabled = true
         pressureSamplesPerSecondText!!.isEnabled = true
         speedSamplesPerSecondText!!.isEnabled = true
@@ -207,7 +225,6 @@ class MainActivity : Activity() {
     }
 
     companion object {
-
         private const val DEFAULT_RECORDING_TITLE = "driving around"
         private const val DEFAULT_MAX_SAMPLING_TIME_MINUTES = 60
         private const val DEFAULT_PRESSURE_SAMPLES_PER_SECOND = 60.0f
