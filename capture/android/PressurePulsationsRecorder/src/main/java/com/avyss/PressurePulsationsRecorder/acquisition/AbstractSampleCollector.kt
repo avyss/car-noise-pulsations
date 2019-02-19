@@ -9,59 +9,63 @@ abstract class AbstractSampleCollector(
         private val recStartTimeNanos: Long
 ) {
 
+    companion object {
+        private const val NANOS_IN_SECOND: Long = 1000L * 1000L * 1000L
+    }
+
     @Volatile
     private var collectionFinished: Boolean = false
 
-    private val maxSamples = Math.round(maxRecordingLengthSec * samplingRate)
-    private val counts = IntArray(maxSamples)
-    private val sums = Array(nValuesPerSample) {FloatArray(maxSamples)}
-    private var firstSampleTimeNanos: Long = -1
-    private var lastSampleIndex: Int = -1
+    private val maxNSamples = Math.round(maxRecordingLengthSec * samplingRate)
+    private val counts      = IntArray(maxNSamples)
+    private val sums        = Array(nValuesPerSample) {FloatArray(maxNSamples)}
 
-    // no samples captured?
-    // some samples were captured
-    val collectedSamples: Array<FloatArray>
+    val collectedData: Array<FloatArray>
         get() {
 
             if (!collectionFinished) {
                 throw IllegalStateException("samples are still being collected, call stopCollecting() first")
             }
-            if (lastSampleIndex < 0) {
+
+            // find index of first actual sample
+            var idx = 0;
+            while (idx < maxNSamples && counts[idx] == 0) {
+                idx++;
+            }
+            if (idx == maxNSamples) {
                 return Array(0, {FloatArray(0)})
             }
+            val firstSampleIdx = idx;
 
-            val samples = Array(nValuesPerSample, {FloatArray(lastSampleIndex + 1)})
+            // find index of last actual sample
+            // (it may be the same one as the first, if there only one sample has arrived)
+            var lastSampleIdx = firstSampleIdx;
+            while (idx < maxNSamples) {
+                if (counts[idx] != 0) {
+                    lastSampleIdx = idx;
+                }
+                idx++;
+            }
 
-            for (i in 0..lastSampleIndex) {
+            val retData = Array(1 + nValuesPerSample, {FloatArray(lastSampleIdx - firstSampleIdx + 1)})
+
+            for (i in firstSampleIdx .. lastSampleIdx) {
+                val time = i.toFloat() / samplingRate
+                retData[0][i] = time
                 for (n in 0 until nValuesPerSample) {
                     if (counts[i] == 0) {
-                        samples[n][i] = java.lang.Float.NaN
+                        retData[n+1][i] = java.lang.Float.NaN
                     } else {
-                        samples[n][i] = sums[n][i] / counts[i]
+                        retData[n+1][i] = sums[n][i] / counts[i]
                     }
                 }
             }
 
-            return samples
+            return retData
         }
 
     fun stopCollecting() {
         collectionFinished = true
-    }
-
-    fun firstSampleTimeDelay(): Float {
-        if (!collectionFinished) {
-            throw IllegalStateException("samples are still being collected, call stopCollecting() first")
-        }
-
-        if (lastSampleIndex < 0) {
-            // no samples captured
-            return java.lang.Float.NaN
-        } else {
-            // some samples were captured
-            return (firstSampleTimeNanos - recStartTimeNanos).toFloat() / NANOS_IN_SECOND
-        }
-
     }
 
     protected fun onSampleAcquired(timestamp: Long, vararg sampledValues: Float) {
@@ -74,30 +78,21 @@ abstract class AbstractSampleCollector(
             throw IllegalArgumentException()
         }
 
-        if (firstSampleTimeNanos == -1L) {
-            firstSampleTimeNanos = timestamp
-        }
-
-        val elapsedSeconds = (timestamp - firstSampleTimeNanos).toFloat() / NANOS_IN_SECOND
+        val elapsedSeconds = (timestamp - recStartTimeNanos).toFloat() / NANOS_IN_SECOND
 
         val sampleIndex = Math.round(elapsedSeconds * samplingRate)
 
         Log.v("received", "index $sampleIndex value " + sampledValues.joinToString { f->f.toString() })
 
-        if (sampleIndex < 0 || sampleIndex >= maxSamples) {
+        if (sampleIndex < 0 || sampleIndex >= maxNSamples) {
             return
         }
 
         for (n in 0 until nValuesPerSample) {
             sums[n][sampleIndex] += sampledValues[n]
         }
+
         counts[sampleIndex]++
-
-        lastSampleIndex = sampleIndex
-    }
-
-    companion object {
-        private const val NANOS_IN_SECOND: Long = 1000L * 1000L * 1000L
     }
 
 }
