@@ -3,15 +3,25 @@ package com.avyss.PressurePulsationsRecorder.acquisition
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
+import com.avyss.PressurePulsationsRecorder.data.NamedExportableData
+import com.avyss.PressurePulsationsRecorder.data.NamedExportableValuesLine
+import com.avyss.PressurePulsationsRecorder.data.RateAccommodatingSampleCollector
 
 class PressureCollectingListener(
-        samplesPerSecond: Float,
+        private val samplesPerSecond: Float,
         maxRecordingLengthSec: Int,
         recStartTimeNanos: Long
-) : AbstractSampleCollector(1, samplesPerSecond, maxRecordingLengthSec, recStartTimeNanos), SensorEventListener {
+): SensorEventListener {
+
+    private val sampleCollector = RateAccommodatingSampleCollector(
+            samplesPerSecond,
+            maxRecordingLengthSec,
+            recStartTimeNanos,
+            1)
 
     companion object {
-        val COLLECTED_VALUES_NAMES: Array<String> = arrayOf("time", "pressure")
+        val SAMPLES_COLUMNS_NAMES = arrayOf("time", "pressure")
+        val SAMPLING_RATE_COLUMNS_NAMES = arrayOf("sampling_rate")
     }
 
     override fun onSensorChanged(event: SensorEvent) {
@@ -19,8 +29,17 @@ class PressureCollectingListener(
             return
         }
 
-        onSampleAcquired(event.timestamp, event.values[0])
+        sampleCollector.onSampleAcquired(event.timestamp, event.values[0])
     }
 
     override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
+
+    fun exportableSamples(): NamedExportableData {
+        return sampleCollector.getExportable().withNames(SAMPLES_COLUMNS_NAMES)
+    }
+
+    fun exportableFs(): NamedExportableData {
+        return NamedExportableValuesLine(SAMPLING_RATE_COLUMNS_NAMES, floatArrayOf(samplesPerSecond))
+    }
+
 }

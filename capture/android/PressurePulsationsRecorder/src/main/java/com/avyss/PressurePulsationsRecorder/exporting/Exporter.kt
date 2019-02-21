@@ -6,9 +6,10 @@ import android.content.Intent
 import android.net.Uri
 import android.support.v4.content.FileProvider
 import android.util.Log
+import com.avyss.PressurePulsationsRecorder.acquisition.PressureCollectingListener
 
 import com.avyss.PressurePulsationsRecorder.acquisition.RecordingDetails
-import com.avyss.PressurePulsationsRecorder.acquisition.AbstractSampleCollector
+import com.avyss.PressurePulsationsRecorder.acquisition.SpeedCollectingListener
 
 import java.io.File
 import java.io.IOException
@@ -20,22 +21,29 @@ class Exporter(private val parentActivity: Activity) {
 
     companion object {
         private const val FILE_SHARING_AUTH_NAME = "com.avyss.PressurePulsationsRecorder.recordingSharing"
-        private const val FORMAT_VERSION = "1, 0"
+
+        private val DATA_FORMAT_VERSION_COLUMNS = arrayOf("major", "minor")
+        private val DATA_FORMAT_VERSION_VALUES = floatArrayOf(1f, 0f)
     }
 
     @Throws(IOException::class)
     fun exportResults(
             context: Context,
             recDetails: RecordingDetails,
-            pressureCollector: AbstractSampleCollector,
-            speedCollector: AbstractSampleCollector) {
+            pressureCollector: PressureCollectingListener,
+            speedCollector: SpeedCollectingListener) {
 
         val zipFileName = generateFileName(recDetails)
 
         val zp = ZipPacker(parentActivity.baseContext.cacheDir, zipFileName).use{
-            it.addValues("format", listOf(FORMAT_VERSION).listIterator())
-            it.addSamples("pressure", pressureCollector)
-            it.addSamples("speed", speedCollector)
+
+            it.put("format", DATA_FORMAT_VERSION_COLUMNS, DATA_FORMAT_VERSION_VALUES)
+
+            it.put("pressure_samples", pressureCollector.exportableSamples())
+            it.put("pressure_fs",      pressureCollector.exportableFs())
+
+            it.put("speed_samples", speedCollector.exportableSamples())
+            it.put("speed_fs",      speedCollector.exportableFs())
 
             val zipFile = it.zipFile
             shareResults(context, listOf(zipFile))

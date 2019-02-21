@@ -182,9 +182,6 @@ class MainActivity : Activity() {
     private fun doStopRecording() {
         wakeLock!!.release()
 
-        pressureCollector!!.stopCollecting()
-        speedCollector!!.stopCollecting()
-
         sensorManager!!.unregisterListener(pressureCollector)
         if (speedAvailable) {
             locationManager!!.removeUpdates(speedCollector)
@@ -200,7 +197,8 @@ class MainActivity : Activity() {
                     baseContext,
                     recDetails!!,
                     pressureCollector!!,
-                    speedCollector!!)
+                    speedCollector!!
+            )
         } catch (e: IOException) {
             Log.e("export", "can't export results", e)
             throw RuntimeException("can't export results", e)

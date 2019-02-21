@@ -10,7 +10,7 @@ function data = load_recording_data(fileName, fileTitle)
   disp(['unzipping recording data into: ' unzipFilesDir]);
   
   unzip(fileName, unzipFilesDir);
-  data.format          = do_load(unzipFilesDir, 'formatana',           false);
+  data.format          = do_load(unzipFilesDir, 'format',           false);
   data.pressureSamples = do_load(unzipFilesDir, 'pressure_samples', true);
   data.pressureFs      = do_load(unzipFilesDir, 'pressure_fs',      true);
   data.speedSamples    = do_load(unzipFilesDir, 'speed_samples',    false);

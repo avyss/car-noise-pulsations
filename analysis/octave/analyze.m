@@ -31,10 +31,13 @@ hasSpeedData = (length(data.speedSamples) > 0);
 if hasSpeedData
   speedTimes = data.speedSamples(:,1);
   speedValues = data.speedSamples(:,2) * (60*60/1000);
+  bearingValues = data.speedSamples(:,3);
   useIndexes = find((speedTimes >= timeRange(1)) 
                   & (speedTimes <= timeRange(2)));
   speedTimes  = speedTimes(useIndexes);
   speedValues = speedValues(useIndexes);
+  bearingTimes = speedTimes;
+  bearingValues = bearingValues(useIndexes);
 endif
 
 # Determine oversampling rate in the measurements: 
@@ -65,6 +68,7 @@ step = ceil(window/3);
 
 figure(1);
 clear figure;
+
 subplot(2, 1, 1);
 hold on;
 
@@ -81,7 +85,7 @@ specS = max(specS, 10^(-40/10));   # clip below -40 dB.
 specS = min(specS, 10^(-3/10));    # clip above -3 dB.
 imagesc(specT, specF, log(specS));    # display in log scale
 set(gca, "ydir", "normal"); # put the 'y' direction in the correct direction
-             
+
 axis([min(pressureTimes) max(pressureTimes)]);
 xlabel('Time [sec]')
 ylabel('Frequency [Hz]')
@@ -103,10 +107,16 @@ endif
 subplot(2, 1, 2);
 hold on;
 
-plot(speedTimes, speedValues, '^-');
-axis([min(pressureTimes) max(pressureTimes)]);
+turn_rates = diff(bearingValues) ./ diff(bearingTimes);
+turn_rates_t = bearingTimes(1 : length(bearingTimes) - 1);
+[ax h1 h2] = plotyy(speedTimes, speedValues, turn_rates_t, turn_rates);
+set(h1, 'Marker', '^');
+set(h2, 'Marker', 'x');
+axis(ax(1), [min(pressureTimes) max(pressureTimes)]);
+axis(ax(2), [min(pressureTimes) max(pressureTimes)]);
 xlabel('Time [sec]');
-ylabel('Speed [km/h]');
+ylabel(ax(1), 'Speed [km/h]');
+ylabel(ax(2), 'Trun rate [deg/sec]');
 grid on;
 
 figure(2);

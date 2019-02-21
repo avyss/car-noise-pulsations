@@ -2,7 +2,8 @@ package com.avyss.PressurePulsationsRecorder.exporting
 
 import android.util.Log
 
-import com.avyss.PressurePulsationsRecorder.acquisition.AbstractSampleCollector
+import com.avyss.PressurePulsationsRecorder.data.NamedExportableData
+import com.avyss.PressurePulsationsRecorder.data.NamedExportableValuesLine
 
 import java.io.BufferedOutputStream
 import java.io.BufferedWriter
@@ -21,6 +22,8 @@ class ZipPacker(
 
     companion object {
         private const val DATA_FILE_EXT = ".csv"
+        private const val COMMENT_LINE_START = "# "
+        private const val FIELD_SEPARATOR = ", "
     }
 
     val zipFile: File = File(containerDirectory, fileName)
@@ -37,43 +40,14 @@ class ZipPacker(
         Log.d("results", "stored file " + zipFile.name)
     }
 
-    @Throws(IOException::class)
-    fun addValues(collectorName: String, values: Iterator<String>) {
-        writePart(collectorName, values.iterator())
+    fun put(partName: String, valuesNames: Array<String>, valuesLine: FloatArray) {
+        put(partName, NamedExportableValuesLine(valuesNames, valuesLine))
     }
 
-    @Throws(IOException::class)
-    fun addSamples(collectorName: String, sampleCollector: AbstractSampleCollector) {
-        val samplingRateLines = listOf(java.lang.Float.toString(sampleCollector.samplingRate))
-
-        writePart(collectorName + "_fs", samplingRateLines.iterator())
-
-        val values = sampleCollector.collectedData
-        val nValuesPerLine = values.size
-        val nLines = values[0].size
-
-        val samplesLines = object : Iterator<String> {
-            private var i = 0
-
-            override fun hasNext(): Boolean {
-                return i < nLines
-            }
-
-            override fun next(): String {
-                var line = "";
-                for (n in 0 until nValuesPerLine) {
-                    if (n > 0) {
-                        line += ", "
-                    }
-                    line += values[n][i].toString()
-                }
-                i++
-                return line
-            }
-        }
-
-        writePart(collectorName + "_samples", samplesLines)
+    fun put(partName: String, namedExportableData: NamedExportableData) {
+        writePart(partName, StringGeneratingIterator(namedExportableData))
     }
+
 
     @Throws(IOException::class)
     private fun writePart(partName: String, linesIterator: Iterator<String>) {
@@ -104,5 +78,32 @@ class ZipPacker(
 
     }
 
+
+    private inner class StringGeneratingIterator(
+            namedExportableData: NamedExportableData
+    ): Iterator<String> {
+
+        private val columnNames  = namedExportableData.columnNames
+        private val rowsIterator = namedExportableData.rowsIterator
+
+        private var writeColumnNamesLine: Boolean = (columnNames != null)
+
+        override fun hasNext(): Boolean {
+            if (writeColumnNamesLine) {
+                return true
+            } else {
+                return rowsIterator.hasNext()
+            }
+        }
+
+        override fun next(): String {
+            if (writeColumnNamesLine) {
+                writeColumnNamesLine = false
+                return COMMENT_LINE_START + columnNames!!.joinToString(FIELD_SEPARATOR)
+            } else {
+                return rowsIterator.next().joinToString(FIELD_SEPARATOR)
+            }
+        }
+    }
 
 }
