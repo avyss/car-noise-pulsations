@@ -1,5 +1,9 @@
-function data = load_recording_data(fileName, fileTitle)
-  subDir = fileTitle;
+function data = load_recording_data(fileName)
+  
+  recTitle = extract_recording_title(fileName);
+  
+  subDir = recTitle;
+  
   unzipFilesDir = [tempdir(), filesep(), subDir];
   if exist(unzipFilesDir)
     delete([unzipFilesDir, filesep(), '*.*']);
@@ -15,6 +19,8 @@ function data = load_recording_data(fileName, fileTitle)
   data.pressureFs      = do_load(unzipFilesDir, 'pressure_fs',      true);
   data.speedSamples    = do_load(unzipFilesDir, 'speed_samples',    false);
   data.speedFs         = do_load(unzipFilesDir, 'speed_fs',         true);
+  data.bearingSamples  = do_load(unzipFilesDir, 'bearing_samples',  false);
+  data.bearingFs       = do_load(unzipFilesDir, 'bearing_fs',       true);
 endfunction
 
 

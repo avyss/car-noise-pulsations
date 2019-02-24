@@ -14,9 +14,9 @@ if nargin() < 2
 endif
 
 display(['Starting analysys of: ' fileName]);
-fileTitle = extractTitle(fileName);
+fileTitle = extract_recording_title(fileName);
 
-data = load_recording_data(fileName, fileTitle);
+data = load_recording_data(fileName);
 
 Fs = data.pressureFs;      
 
@@ -31,13 +31,26 @@ hasSpeedData = (length(data.speedSamples) > 0);
 if hasSpeedData
   speedTimes = data.speedSamples(:,1);
   speedValues = data.speedSamples(:,2) * (60*60/1000);
-  bearingValues = data.speedSamples(:,3);
-  useIndexes = find((speedTimes >= timeRange(1)) 
-                  & (speedTimes <= timeRange(2)));
-  speedTimes  = speedTimes(useIndexes);
-  speedValues = speedValues(useIndexes);
-  bearingTimes = speedTimes;
-  bearingValues = bearingValues(useIndexes);
+  speedUseIndexes = find((speedTimes >= timeRange(1)) 
+                     & (speedTimes <= timeRange(2)));
+  speedTimes  = speedTimes(speedUseIndexes);
+  speedValues = speedValues(speedUseIndexes);
+else 
+  speedTimes = [];
+  speedValues = [];
+endif
+
+hasBearingData = (length(data.bearingSamples) > 0);
+if hasBearingData
+  bearingTimes = data.bearingSamples(:,1);
+  bearingValues = data.bearingSamples(:,2);
+  bearingUseIndexes = find((speedTimes >= timeRange(1)) 
+                       & (speedTimes <= timeRange(2)));
+  bearingTimes  = bearingTimes(bearingUseIndexes);
+  bearingValues = bearingValues(bearingUseIndexes);
+else 
+  bearingTimes = [];
+  bearingValues = [];
 endif
 
 # Determine oversampling rate in the measurements: 
@@ -98,7 +111,7 @@ minFreqCutoffIdx = round(length(specF) / 4);
 pulsationsFrequencies = specF(im + minFreqCutoffIdx - 1);
 plot(specT, pulsationsFrequencies, 'o-c');
 
-# plot speed (if available)
+# analyze speed relation (if speed available)
 if !hasSpeedData
   display('No speed data, further processing not possible');
   return;
@@ -143,18 +156,6 @@ ylabel('pulsations F');
 
 display(['Finished analysys of: ' fileName]);
 
-endfunction
-
-function fileTitle = extractTitle(fileName)
-    fileExtPos = strfind(fileName, '.zip');
-    if size(fileExtPos) == 0
-        error('recording file name must end with .zip');
-        return;
-    endif
-    
-    lastSlashPos = max([0, strfind(fileName, '/'), strfind(fileName, '\')]);
-    
-    fileTitle = fileName(lastSlashPos + 1 : fileExtPos - 1);
 endfunction
 
 function r = overrideNaNs(v)

@@ -34,7 +34,7 @@ class PressureCollectingListener(
 
     override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
 
-    fun exportableSamples(): NamedExportableData {
+    fun exportablePressureSamples(): NamedExportableData {
         return sampleCollector.getExportable().withNames(SAMPLES_COLUMNS_NAMES)
     }
 

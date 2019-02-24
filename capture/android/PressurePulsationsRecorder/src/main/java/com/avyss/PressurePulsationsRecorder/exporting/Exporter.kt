@@ -35,15 +35,18 @@ class Exporter(private val parentActivity: Activity) {
 
         val zipFileName = generateFileName(recDetails)
 
-        val zp = ZipPacker(parentActivity.baseContext.cacheDir, zipFileName).use{
+        ZipPacker(parentActivity.baseContext.cacheDir, zipFileName).use{
 
             it.put("format", DATA_FORMAT_VERSION_COLUMNS, DATA_FORMAT_VERSION_VALUES)
 
-            it.put("pressure_samples", pressureCollector.exportableSamples())
+            it.put("pressure_samples", pressureCollector.exportablePressureSamples())
             it.put("pressure_fs",      pressureCollector.exportableFs())
 
-            it.put("speed_samples", speedCollector.exportableSamples())
+            it.put("speed_samples", speedCollector.exportableSpeedSamples())
             it.put("speed_fs",      speedCollector.exportableFs())
+
+            it.put("bearing_samples", speedCollector.exportableBearingSamples())
+            it.put("bearing_fs",      speedCollector.exportableFs())
 
             val zipFile = it.zipFile
             shareResults(context, listOf(zipFile))
