@@ -107,13 +107,27 @@ endif
 subplot(2, 1, 2);
 hold on;
 
-turn_rates = diff(bearingValues) ./ diff(bearingTimes);
-turn_rates_t = bearingTimes(1 : length(bearingTimes) - 1);
-[ax h1 h2] = plotyy(speedTimes, speedValues, turn_rates_t, turn_rates);
+# make smooth plot of turn rate even when the bearing crosses 0<->360deg boundary
+# present the bearing as a vector on unit circle
+bearing_x = cos(bearingValues/180*pi);
+bearing_y = sin(bearingValues/180*pi);
+bearing_deltas_x = [diff(bearing_x); 0];
+bearing_deltas_y = [diff(bearing_y); 0];
+# turn rate (absolute):
+turn_rates = sqrt(bearing_deltas_x.^2 + bearing_deltas_y.^2) ./ pi*180 ./ [diff(bearingTimes); Inf];
+# turn rate direction - determine it as the sign of Z coordinate of the cross product 
+# between the bearing direction and the delta-bearing direction (z=ax*by - ay*bx)
+turn_rate_dir = sign(bearing_x .* bearing_deltas_y - bearing_y .* bearing_deltas_x);
+# plot the result
+[ax h1 h2] = plotyy(speedTimes, speedValues, bearingTimes, turn_rates .* turn_rate_dir);
 set(h1, 'Marker', '^');
-set(h2, 'Marker', 'x');
+set(h1, 'Color', 'b');
+set(h2, 'Marker', '.');
+set(h2, 'Color', 'k');
 axis(ax(1), [min(pressureTimes) max(pressureTimes)]);
 axis(ax(2), [min(pressureTimes) max(pressureTimes)]);
+set(ax(2), 'YLim', [-180 180]);
+set(ax, {'ycolor'}, {'b';'k'})
 xlabel('Time [sec]');
 ylabel(ax(1), 'Speed [km/h]');
 ylabel(ax(2), 'Trun rate [deg/sec]');
