@@ -44,8 +44,8 @@ hasBearingData = (length(data.bearingSamples) > 0);
 if hasBearingData
   bearingTimes = data.bearingSamples(:,1);
   bearingValues = data.bearingSamples(:,2);
-  bearingUseIndexes = find((speedTimes >= timeRange(1)) 
-                       & (speedTimes <= timeRange(2)));
+  bearingUseIndexes = find((bearingTimes >= timeRange(1)) 
+                       & (bearingTimes <= timeRange(2)));
   bearingTimes  = bearingTimes(bearingUseIndexes);
   bearingValues = bearingValues(bearingUseIndexes);
 else 
@@ -80,9 +80,9 @@ window = ceil(window_sec*Fs);
 step = ceil(window/3);
 
 figure(1);
-clear figure;
+clf;
 
-subplot(2, 1, 1);
+subplot(3, 1, 1);
 hold on;
 
 # plot spectrogram
@@ -99,7 +99,7 @@ specS = min(specS, 10^(-3/10));    # clip above -3 dB.
 imagesc(specT, specF, log(specS));    # display in log scale
 set(gca, "ydir", "normal"); # put the 'y' direction in the correct direction
 
-axis([min(pressureTimes) max(pressureTimes)]);
+axis([min(pressureTimes) max(pressureTimes) 0 max(specF)]);
 xlabel('Time [sec]')
 ylabel('Frequency [Hz]')
 title(strrep(fileTitle,'_',':'));
@@ -117,7 +117,19 @@ if !hasSpeedData
   return;
 endif
 
-subplot(2, 1, 2);
+subplot(3, 1, 2);
+hold on;
+
+# make smooth plot of turn rate even when the bearing crosses 0<->360deg boundary
+# present the bearing as a vector on unit circle
+# plot the result
+plot(speedTimes, speedValues, 'kd-');
+axis([min(pressureTimes) max(pressureTimes)]);
+xlabel('Time [sec]');
+ylabel('Speed [km/h]');
+grid on;
+
+subplot(3, 1, 3);
 hold on;
 
 # make smooth plot of turn rate even when the bearing crosses 0<->360deg boundary
@@ -132,23 +144,25 @@ turn_rates = sqrt(bearing_deltas_x.^2 + bearing_deltas_y.^2) ./ pi*180 ./ [diff(
 # between the bearing direction and the delta-bearing direction (z=ax*by - ay*bx)
 turn_rate_dir = sign(bearing_x .* bearing_deltas_y - bearing_y .* bearing_deltas_x);
 # plot the result
-[ax h1 h2] = plotyy(speedTimes, speedValues, bearingTimes, turn_rates .* turn_rate_dir);
+[ax h1 h2] = plotyy(bearingTimes, bearingValues, bearingTimes, turn_rates .* turn_rate_dir);
 set(h1, 'Marker', '^');
 set(h1, 'Color', 'b');
 set(h2, 'Marker', '.');
 set(h2, 'Color', 'k');
 axis(ax(1), [min(pressureTimes) max(pressureTimes)]);
 axis(ax(2), [min(pressureTimes) max(pressureTimes)]);
-set(ax(2), 'YLim', [-180 180]);
+set(ax(1), 'YLim', [0 360]);
+set(ax(2), 'YLim', [-20 20]);
 set(ax, {'ycolor'}, {'b';'k'})
 xlabel('Time [sec]');
-ylabel(ax(1), 'Speed [km/h]');
+ylabel(ax(1), 'Bearing [deg]');
 ylabel(ax(2), 'Trun rate [deg/sec]');
 grid on;
 
 figure(2);
-clear figure;
+clf;
 hold on;
+title(strrep(fileTitle,'_',':'));
 plotSpeed = interp1(speedTimes, speedValues, specT);
 plot(plotSpeed, pulsationsFrequencies, 'x');
 xlabel('speed');
