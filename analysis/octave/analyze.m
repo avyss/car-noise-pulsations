@@ -13,13 +13,20 @@ if nargin() < 2
   endif
 endif
 
+param_LowFrequencyCutoffHz = 0.5; # low pressure frequencies to be ignored 
+param_SpecgramWindowSec = 10; # one spectral slice every <n> sec
+#param_SuppressDcMethod = 'mean';
+param_SuppressDcMethod = 'filter';
+
 display(['Starting analysys of: ' fileName]);
 fileTitle = extract_recording_title(fileName);
+figTitle = strrep(fileTitle,'_',':');
 
 data = load_recording_data(fileName);
 
 Fs = data.pressureFs;      
 
+# extract pressure data in specified time range
 pressureTimes  = data.pressureSamples(:,1);
 pressureValues = data.pressureSamples(:,2);
 useIndexes = find((pressureTimes >= timeRange(1)) 
@@ -27,6 +34,7 @@ useIndexes = find((pressureTimes >= timeRange(1))
 pressureTimes  = pressureTimes(useIndexes);
 pressureValues = pressureValues(useIndexes);
 
+# extract speed data in specified time range
 hasSpeedData = (length(data.speedSamples) > 0);
 if hasSpeedData
   speedTimes = data.speedSamples(:,1);
@@ -40,6 +48,7 @@ else
   speedValues = [];
 endif
 
+# extract bearing data in specified time range
 hasBearingData = (length(data.bearingSamples) > 0);
 if hasBearingData
   bearingTimes = data.bearingSamples(:,1);
@@ -69,25 +78,20 @@ pressureValues = pressureValues([1 : subsampling_rate : length(pressureValues)])
 pressureTimes  = pressureTimes([1 : subsampling_rate : length(pressureTimes)]);
 Fs = Fs / subsampling_rate;
 
-# Cut the near-DC component of the pressure 
-pressureValues = pressureValues - mean(pressureValues);
-#[lpf_b, lpf_a]=butter(10, 0.3);
-#pressureDC = filter(lpf_b, lpf_a, pressureValues);
-#pressureValues = pressureValues - pressureDC;
+# suppress the near-DC component of the pressure 
+if strcmp(param_SuppressDcMethod, 'filter') == 1
+  # apply low-pass filter to cut frequencies below significance threshold
+  pkg load signal;
+  [lpf_b, lpf_a] = butter(5, param_LowFrequencyCutoffHz / (Fs/2) * 0.75, 'high');
+  pressureValues = filter(lpf_b, lpf_a, pressureValues);
+else 
+  # alternative: just subtract the mean
+  pressureValues = pressureValues - mean(pressureValues);
+end
 
-window_sec = 10; # one spectral slice every 3 sec
-window = ceil(window_sec*Fs);     
+# calculate spectrogram 
+window = ceil(param_SpecgramWindowSec * Fs);     
 step = ceil(window/3);
-
-figure(1);
-clf;
-
-subplot(3, 1, 1);
-hold on;
-
-# plot spectrogram
-pkg load signal;
-#specgram(pressureValues, 2^nextpow2(window), Fs, window, window-step);
 [specS, specF, specT] = specgram(pressureValues, 2^nextpow2(window), Fs, window, window-step);
 specT = specT + pressureTimes(1);
 specS = abs(specS);
@@ -96,20 +100,46 @@ if (max(specS(:)) != 0)
 endif
 specS = max(specS, 10^(-40/10));   # clip below -40 dB.
 specS = min(specS, 10^(-3/10));    # clip above -3 dB.
+
+# find frequency with maximum intensity for each window
+minFreqCutoffIdx = min(find(specF >= param_LowFrequencyCutoffHz));
+[m, maxIdx] = max(specS(minFreqCutoffIdx : length(specF), :));
+pulsationsFrequencies = specF(maxIdx + minFreqCutoffIdx - 1);
+significantFreqIdx = find(pulsationsFrequencies > specF(minFreqCutoffIdx));
+
+display('Analysis of pressure frequency spectrum done.');
+display(['   Effective sampling frequency: ', num2str(Fs), ' Hz']);
+display(['   Frequency resolution: ', num2str(specF(2)), ' Hz']);
+display(['   Maximal detectable frequency: ', num2str(max(specF)), ' Hz']);
+
+figure(4);
+clf;
+title({figTitle, 'Pressure pulsations - spectrogram'});
+hold on;
+surf(specT, specF, log(specS));
+colormap(cool)
+xlabel('Time [sec]')
+ylabel('Frequency [Hz]')
+view(150, 45)
+
+figure(1);
+clf;
+
+subplot(3, 1, 1);
+title({figTitle, 'Pressure Pulsations Frequencies'});
+hold on;
+
+# plot spectrogram
 imagesc(specT, specF, log(specS));    # display in log scale
 set(gca, "ydir", "normal"); # put the 'y' direction in the correct direction
-
 axis([min(pressureTimes) max(pressureTimes) 0 max(specF)]);
 xlabel('Time [sec]')
 ylabel('Frequency [Hz]')
-title(strrep(fileTitle,'_',':'));
 grid on;
+# plot detected frequencies
+plot(specT, pulsationsFrequencies, '.-c');
+plot(specT(significantFreqIdx), pulsationsFrequencies(significantFreqIdx), 'oc');
 
-# mark frequency with maximum intensity for each window
-minFreqCutoffIdx = round(length(specF) / 4);
-[m,im] = max(specS(minFreqCutoffIdx:length(specF), :));
-pulsationsFrequencies = specF(im + minFreqCutoffIdx - 1);
-plot(specT, pulsationsFrequencies, 'o-c');
 
 # analyze speed relation (if speed available)
 if !hasSpeedData
@@ -118,6 +148,7 @@ if !hasSpeedData
 endif
 
 subplot(3, 1, 2);
+title('Speed')
 hold on;
 
 # make smooth plot of turn rate even when the bearing crosses 0<->360deg boundary
@@ -130,6 +161,7 @@ ylabel('Speed [km/h]');
 grid on;
 
 subplot(3, 1, 3);
+title('Bearing & Turn rate')
 hold on;
 
 # make smooth plot of turn rate even when the bearing crosses 0<->360deg boundary
@@ -161,12 +193,12 @@ grid on;
 
 figure(2);
 clf;
+title({figTitle, 'Pulsation frequency vs. Speed'});
 hold on;
-title(strrep(fileTitle,'_',':'));
-plotSpeed = interp1(speedTimes, speedValues, specT);
-plot(plotSpeed, pulsationsFrequencies, 'x');
+plotSpeed = interp1(speedTimes, speedValues, specT(significantFreqIdx));
+plot(plotSpeed, pulsationsFrequencies(significantFreqIdx), 'o');
 xlabel('speed');
-ylabel('pulsations F');
+ylabel('F');
 
 display(['Finished analysys of: ' fileName]);
 
