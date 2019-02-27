@@ -36,7 +36,7 @@ class RateAccommodatingSampleCollector(
 
         val sampleIndex = Math.round(elapsedSeconds * samplesPerSecond)
 
-        Log.v("received", "index $sampleIndex value " + sampledValues.joinToString { f->f.toString() })
+        //Log.v("received", "index $sampleIndex value " + sampledValues.joinToString { f->f.toString() })
 
         if (sampleIndex < 0 || sampleIndex >= maxNSamples) {
             return

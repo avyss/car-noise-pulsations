@@ -20,8 +20,8 @@ class PressureCollectingListener(
             1)
 
     companion object {
-        val SAMPLES_COLUMNS_NAMES = arrayOf("time", "pressure")
-        val SAMPLING_RATE_COLUMNS_NAMES = arrayOf("sampling_rate")
+        val SAMPLES_COLUMNS_NAMES = arrayOf("time [sec]", "pressure [hPa]")
+        val SAMPLING_RATE_COLUMNS_NAMES = arrayOf("sampling_rate [Hz]")
     }
 
     override fun onSensorChanged(event: SensorEvent) {

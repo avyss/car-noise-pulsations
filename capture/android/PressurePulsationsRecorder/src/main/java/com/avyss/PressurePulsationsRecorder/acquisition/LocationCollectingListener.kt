@@ -7,16 +7,16 @@ import com.avyss.PressurePulsationsRecorder.data.NamedExportableData
 import com.avyss.PressurePulsationsRecorder.data.NamedExportableValuesLine
 import com.avyss.PressurePulsationsRecorder.data.RateAccommodatingSampleCollector
 
-class SpeedCollectingListener(
+class LocationCollectingListener(
         private val samplesPerSecond: Float,
         maxRecordingLengthSec: Int,
         recStartTimeNanos: Long
 ): LocationListener {
 
     companion object {
-        val SPEED_COLUMNS_NAMES: Array<String> = arrayOf("time", "speed")
-        val BEARING_COLUMNS_NAMES: Array<String> = arrayOf("time", "bearing")
-        val SAMPLING_RATE_COLUMNS_NAMES = arrayOf("sampling_rate")
+        val SPEED_COLUMNS_NAMES: Array<String> = arrayOf("time [sec]", "speed [km/h]")
+        val BEARING_COLUMNS_NAMES: Array<String> = arrayOf("time [sec]", "bearing [deg]")
+        val SAMPLING_RATE_COLUMNS_NAMES = arrayOf("sampling_rate [Hz]")
     }
 
     private val speedCollector = RateAccommodatingSampleCollector(

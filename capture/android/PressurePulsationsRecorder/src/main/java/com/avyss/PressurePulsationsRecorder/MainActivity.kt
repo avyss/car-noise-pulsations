@@ -23,7 +23,8 @@ import android.widget.Toast
 
 import com.avyss.PressurePulsationsRecorder.acquisition.PressureCollectingListener
 import com.avyss.PressurePulsationsRecorder.acquisition.RecordingDetails
-import com.avyss.PressurePulsationsRecorder.acquisition.SpeedCollectingListener
+import com.avyss.PressurePulsationsRecorder.acquisition.LocationCollectingListener
+import com.avyss.PressurePulsationsRecorder.acquisition.WindDetails
 import com.avyss.PressurePulsationsRecorder.exporting.Exporter
 
 import java.io.IOException
@@ -39,8 +40,9 @@ class MainActivity : Activity() {
     private var recDetails: RecordingDetails? = null
 
     private var pressureCollector: PressureCollectingListener? = null
-    private var speedCollector: SpeedCollectingListener? = null
-    private var speedAvailable: Boolean = false
+    private var locationCollector: LocationCollectingListener? = null
+    private var locationAvailable: Boolean = false
+    private var windDetails: WindDetails? = null
 
     private var titleText: EditText? = null
     private var maxRecordingLengthText: EditText? = null
@@ -137,22 +139,24 @@ class MainActivity : Activity() {
                 sensorManager!!.getDefaultSensor(Sensor.TYPE_PRESSURE),
                 SensorManager.SENSOR_DELAY_FASTEST)
 
-        speedCollector = SpeedCollectingListener(
+        locationCollector = LocationCollectingListener(
                 speedSamplesPerSecond,
                 maxRecordingLengthSec,
                 recStartTimeNanos
         )
+
+        windDetails = WindDetails();
 
         try {
             locationManager!!.requestLocationUpdates(
                     LocationManager.GPS_PROVIDER,
                     Math.round(1000f / speedSamplesPerSecond / 2f).toLong(),
                     0f,
-                    speedCollector)
-            speedAvailable = true
+                    locationCollector)
+            locationAvailable = true
         } catch (e: SecurityException) {
             Log.e("init", "no permission to read GPS, so no velocity info")
-            speedAvailable = false
+            locationAvailable = false
         }
 
         maxRecordingLengthText!!.isEnabled = false
@@ -183,8 +187,8 @@ class MainActivity : Activity() {
         wakeLock!!.release()
 
         sensorManager!!.unregisterListener(pressureCollector)
-        if (speedAvailable) {
-            locationManager!!.removeUpdates(speedCollector)
+        if (locationAvailable) {
+            locationManager!!.removeUpdates(locationCollector)
         }
 
         val title = titleText!!.text.toString()
@@ -197,7 +201,8 @@ class MainActivity : Activity() {
                     baseContext,
                     recDetails!!,
                     pressureCollector!!,
-                    speedCollector!!
+                    locationCollector!!,
+                    windDetails!!
             )
         } catch (e: IOException) {
             Log.e("export", "can't export results", e)
@@ -205,7 +210,8 @@ class MainActivity : Activity() {
         }
 
         pressureCollector = null
-        speedCollector = null
+        locationCollector = null
+        windDetails = null
         recDetails = null
 
         countdownTimer?.cancel()

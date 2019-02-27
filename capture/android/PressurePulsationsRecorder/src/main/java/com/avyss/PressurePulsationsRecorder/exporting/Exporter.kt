@@ -9,7 +9,8 @@ import android.util.Log
 import com.avyss.PressurePulsationsRecorder.acquisition.PressureCollectingListener
 
 import com.avyss.PressurePulsationsRecorder.acquisition.RecordingDetails
-import com.avyss.PressurePulsationsRecorder.acquisition.SpeedCollectingListener
+import com.avyss.PressurePulsationsRecorder.acquisition.LocationCollectingListener
+import com.avyss.PressurePulsationsRecorder.acquisition.WindDetails
 
 import java.io.File
 import java.io.IOException
@@ -31,7 +32,8 @@ class Exporter(private val parentActivity: Activity) {
             context: Context,
             recDetails: RecordingDetails,
             pressureCollector: PressureCollectingListener,
-            speedCollector: SpeedCollectingListener) {
+            locationCollector: LocationCollectingListener,
+            windDetails: WindDetails) {
 
         val zipFileName = generateFileName(recDetails)
 
@@ -42,11 +44,13 @@ class Exporter(private val parentActivity: Activity) {
             it.put("pressure_samples", pressureCollector.exportablePressureSamples())
             it.put("pressure_fs",      pressureCollector.exportableFs())
 
-            it.put("speed_samples", speedCollector.exportableSpeedSamples())
-            it.put("speed_fs",      speedCollector.exportableFs())
+            it.put("speed_samples",    locationCollector.exportableSpeedSamples())
+            it.put("speed_fs",         locationCollector.exportableFs())
 
-            it.put("bearing_samples", speedCollector.exportableBearingSamples())
-            it.put("bearing_fs",      speedCollector.exportableFs())
+            it.put("bearing_samples",  locationCollector.exportableBearingSamples())
+            it.put("bearing_fs",       locationCollector.exportableFs())
+
+            it.put("wind",             windDetails.exportable())
 
             val zipFile = it.zipFile
             shareResults(context, listOf(zipFile))

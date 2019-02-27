@@ -16,7 +16,7 @@ endif
 param_LowFrequencyCutoffHz = 0.5; # low pressure frequencies to be ignored 
 param_SpecgramWindowSec = 10; # one spectral slice every <n> sec
 #param_SuppressDcMethod = 'mean';
-param_SuppressDcMethod = 'filter';
+param_SuppressDcFilter = true;
 
 display(['Starting analysys of: ' fileName]);
 fileTitle = extract_recording_title(fileName);
@@ -35,8 +35,7 @@ pressureTimes  = pressureTimes(useIndexes);
 pressureValues = pressureValues(useIndexes);
 
 # extract speed data in specified time range
-hasSpeedData = (length(data.speedSamples) > 0);
-if hasSpeedData
+if data.hasSpeed
   speedTimes = data.speedSamples(:,1);
   speedValues = data.speedSamples(:,2) * (60*60/1000);
   speedUseIndexes = find((speedTimes >= timeRange(1)) 
@@ -49,8 +48,7 @@ else
 endif
 
 # extract bearing data in specified time range
-hasBearingData = (length(data.bearingSamples) > 0);
-if hasBearingData
+if data.hasBearing
   bearingTimes = data.bearingSamples(:,1);
   bearingValues = data.bearingSamples(:,2);
   bearingUseIndexes = find((bearingTimes >= timeRange(1)) 
@@ -69,24 +67,24 @@ nTotalSamples = length(pressureValues);
 nanIdx = find(isnan(pressureValues));
 nMeaningfulSamples = nTotalSamples - length(nanIdx);
 subsampling_rate = round(nTotalSamples / nMeaningfulSamples);
+Fs = Fs / subsampling_rate;
+display('')
 display(['Estimated decimation rate for input pressure values: ', num2str(subsampling_rate)]);
+display(['   Effective sampling frequency: ', num2str(Fs), ' Hz']);
 
 # replace NaNs in the measurements with "last-known" values
 pressureValues = overrideNaNs(pressureValues);
 
 pressureValues = pressureValues([1 : subsampling_rate : length(pressureValues)]);
 pressureTimes  = pressureTimes([1 : subsampling_rate : length(pressureTimes)]);
-Fs = Fs / subsampling_rate;
 
 # suppress the near-DC component of the pressure 
-if strcmp(param_SuppressDcMethod, 'filter') == 1
+pressureValues = pressureValues - mean(pressureValues);
+if param_SuppressDcFilter
   # apply low-pass filter to cut frequencies below significance threshold
   pkg load signal;
   [lpf_b, lpf_a] = butter(5, param_LowFrequencyCutoffHz / (Fs/2) * 0.75, 'high');
   pressureValues = filter(lpf_b, lpf_a, pressureValues);
-else 
-  # alternative: just subtract the mean
-  pressureValues = pressureValues - mean(pressureValues);
 end
 
 # calculate spectrogram 
@@ -107,8 +105,8 @@ minFreqCutoffIdx = min(find(specF >= param_LowFrequencyCutoffHz));
 pulsationsFrequencies = specF(maxIdx + minFreqCutoffIdx - 1);
 significantFreqIdx = find(pulsationsFrequencies > specF(minFreqCutoffIdx));
 
-display('Analysis of pressure frequency spectrum done.');
-display(['   Effective sampling frequency: ', num2str(Fs), ' Hz']);
+display('');
+display('Processing of pressure frequency spectrum done');
 display(['   Frequency resolution: ', num2str(specF(2)), ' Hz']);
 display(['   Maximal detectable frequency: ', num2str(max(specF)), ' Hz']);
 
@@ -142,7 +140,7 @@ plot(specT(significantFreqIdx), pulsationsFrequencies(significantFreqIdx), 'oc')
 
 
 # analyze speed relation (if speed available)
-if !hasSpeedData
+if !data.hasSpeed
   display('No speed data, further processing not possible');
   return;
 endif
@@ -195,11 +193,21 @@ figure(2);
 clf;
 title({figTitle, 'Pulsation frequency vs. Speed'});
 hold on;
-plotSpeed = interp1(speedTimes, speedValues, specT(significantFreqIdx));
-plot(plotSpeed, pulsationsFrequencies(significantFreqIdx), 'o');
+speedPlotTimes = specT(significantFreqIdx);
+speedPlotValues = interp1(speedTimes, speedValues, speedPlotTimes);
+plotFreqs = pulsationsFrequencies(significantFreqIdx);
+if data.hasWind
+  windSpeed = data.wind(2) * (60*60/1000);
+  windDirection = data.wind(3);
+  windDirDifference = interp1(bearingTimes, bearingValues, speedPlotTimes) - (180-windDirection);
+  speedPlotValues = speedPlotValues - windSpeed * cos(windDirDifference/180*pi);
+end
+
+plot(speedPlotValues, plotFreqs, 'o');
 xlabel('speed');
 ylabel('F');
 
+display('');
 display(['Finished analysys of: ' fileName]);
 
 endfunction
