@@ -13,10 +13,11 @@ if nargin() < 2
   endif
 endif
 
-param_LowFrequencyCutoffHz = 0.5; # low pressure frequencies to be ignored 
-param_SpecgramWindowSec = 10; # one spectral slice every <n> sec
-#param_SuppressDcMethod = 'mean';
-param_SuppressDcFilter = true;
+param_SpecgramWindowSec = 10.0; # each spectral window covers <n> seconds
+param_SpecgramWindowSteps = 3; # <k> overlapping slices per window
+param_LowFrequencyCutoffFreqHz = 0.5; # low pressure frequencies to be ignored 
+param_LowFrequencyCutoffApplyFilter = false;
+param_LowFrequencyCutoffFilterOrder = 5;
 
 display(['Starting analysys of: ' fileName]);
 fileTitle = extract_recording_title(fileName);
@@ -24,7 +25,7 @@ figTitle = strrep(fileTitle,'_',':');
 
 data = load_recording_data(fileName);
 
-Fs = data.pressureFs;      
+Fs = data.pressureFs;
 
 # extract pressure data in specified time range
 pressureTimes  = data.pressureSamples(:,1);
@@ -80,16 +81,18 @@ pressureTimes  = pressureTimes([1 : subsampling_rate : length(pressureTimes)]);
 
 # suppress the near-DC component of the pressure 
 pressureValues = pressureValues - mean(pressureValues);
-if param_SuppressDcFilter
+if param_LowFrequencyCutoffApplyFilter
   # apply low-pass filter to cut frequencies below significance threshold
   pkg load signal;
-  [lpf_b, lpf_a] = butter(5, param_LowFrequencyCutoffHz / (Fs/2) * 0.75, 'high');
+  [lpf_b, lpf_a] = butter(param_LowFrequencyCutoffFilterOrder, 
+                          param_LowFrequencyCutoffFreqHz / (Fs/2) * 0.75, 
+                          'high');
   pressureValues = filter(lpf_b, lpf_a, pressureValues);
 end
 
 # calculate spectrogram 
 window = ceil(param_SpecgramWindowSec * Fs);     
-step = ceil(window/3);
+step = ceil(window/param_SpecgramWindowSteps);
 [specS, specF, specT] = specgram(pressureValues, 2^nextpow2(window), Fs, window, window-step);
 specT = specT + pressureTimes(1);
 specS = abs(specS);
@@ -100,7 +103,7 @@ specS = max(specS, 10^(-40/10));   # clip below -40 dB.
 specS = min(specS, 10^(-3/10));    # clip above -3 dB.
 
 # find frequency with maximum intensity for each window
-minFreqCutoffIdx = min(find(specF >= param_LowFrequencyCutoffHz));
+minFreqCutoffIdx = min(find(specF >= param_LowFrequencyCutoffFreqHz));
 [m, maxIdx] = max(specS(minFreqCutoffIdx : length(specF), :));
 pulsationsFrequencies = specF(maxIdx + minFreqCutoffIdx - 1);
 significantFreqIdx = find(pulsationsFrequencies > specF(minFreqCutoffIdx));
