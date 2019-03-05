@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.support.v4.content.FileProvider
 import android.util.Log
+import android.widget.Toast
 import com.avyss.PressurePulsationsRecorder.acquisition.PressureCollectingListener
 
 import com.avyss.PressurePulsationsRecorder.acquisition.RecordingDetails
@@ -85,7 +86,14 @@ class Exporter(private val parentActivity: Activity) {
         intentShareFile.type = "application/binary"
         intentShareFile.putExtra(Intent.EXTRA_STREAM, fileUris)
 
-        parentActivity.startActivity(Intent.createChooser(intentShareFile, "Share the recording result"))
+        if (intentShareFile.resolveActivity(context.packageManager) != null) {
+            parentActivity.startActivity(Intent.createChooser(intentShareFile, "Share the recording result"))
+        } else {
+            Toast.makeText(context,
+                    "No apps available to share the recording result",
+                    Toast.LENGTH_SHORT)
+                    .show()
+        }
     }
 
 }
