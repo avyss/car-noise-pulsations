@@ -13,7 +13,7 @@ if nargin() < 2
   endif
 endif
 
-param_SpecgramWindowSec = 10.0; # each spectral window covers <n> seconds
+param_SpecgramWindowSec = 5.0; # each spectral window covers <n> seconds
 param_SpecgramWindowSteps = 3; # <k> overlapping slices per window
 param_LowFrequencyCutoffFreqHz = 0.5; # low pressure frequencies to be ignored 
 param_LowFrequencyCutoffApplyFilter = false;
@@ -79,11 +79,12 @@ pressureValues = overrideNaNs(pressureValues);
 pressureValues = pressureValues([1 : subsampling_rate : length(pressureValues)]);
 pressureTimes  = pressureTimes([1 : subsampling_rate : length(pressureTimes)]);
 
+pkg load signal; %needed for specgram() and for butter()
+
 # suppress the near-DC component of the pressure 
 pressureValues = pressureValues - mean(pressureValues);
 if param_LowFrequencyCutoffApplyFilter
   # apply low-pass filter to cut frequencies below significance threshold
-  pkg load signal;
   [lpf_b, lpf_a] = butter(param_LowFrequencyCutoffFilterOrder, 
                           param_LowFrequencyCutoffFreqHz / (Fs/2) * 0.75, 
                           'high');
