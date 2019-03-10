@@ -7,7 +7,7 @@ android {
 
     defaultConfig {
         applicationId "com.avyss.PressurePulsationsRecorder"
-        minSdkVersion 26
+        minSdkVersion 17
         targetSdkVersion 26
     }
 

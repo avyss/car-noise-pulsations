@@ -1,17 +1,15 @@
 package com.avyss.PressurePulsationsRecorder
 
 import android.Manifest
+import android.annotation.TargetApi
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.location.LocationManager
-import android.os.Bundle
-import android.os.CountDownTimer
-import android.os.PowerManager
+import android.os.*
 import android.os.PowerManager.WakeLock
-import android.os.SystemClock
 import android.support.v4.app.ActivityCompat
 import android.util.Log
 import android.view.View
@@ -91,13 +89,16 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
 
-        askForPermission(Manifest.permission.ACCESS_FINE_LOCATION, 1)
+        if (supportsRuntimePermissions()) {
+            askForPermission(Manifest.permission.ACCESS_FINE_LOCATION, 1)
+        }
     }
 
     override fun onPause() {
         super.onPause()
     }
 
+    @TargetApi(Build.VERSION_CODES.M)
     private fun askForPermission(permission: String, requestCode: Int?) {
         if (baseContext.checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
 
@@ -117,6 +118,11 @@ class MainActivity : Activity() {
             }
         }
     }
+
+    private fun supportsRuntimePermissions(): Boolean {
+        return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+    }
+
 
     private fun doStartRecording() {
         val maxRecordingLengthSec = ((maxRecordingLengthText!!.text.toString()).toFloat() * 60).roundToInt()
