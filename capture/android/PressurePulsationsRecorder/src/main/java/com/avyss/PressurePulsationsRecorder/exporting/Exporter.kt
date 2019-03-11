@@ -24,6 +24,8 @@ class Exporter(private val parentActivity: Activity) {
     companion object {
         private const val FILE_SHARING_AUTH_NAME = "com.avyss.PressurePulsationsRecorder.recordingSharing"
 
+        private const val FILE_SHARING_SUBDIR_NAME = "ppr-recordings"
+
         private val DATA_FORMAT_VERSION_COLUMNS = arrayOf("major", "minor")
         private val DATA_FORMAT_VERSION_VALUES = floatArrayOf(1f, 0f)
     }
@@ -38,7 +40,16 @@ class Exporter(private val parentActivity: Activity) {
 
         val zipFileName = generateFileName(recDetails)
 
-        ZipPacker(parentActivity.baseContext.cacheDir, zipFileName).use{
+        val zipDir = File(parentActivity.baseContext.cacheDir, FILE_SHARING_SUBDIR_NAME)
+        if (zipDir.exists()) {
+            if (!zipDir.isDirectory) {
+                throw RuntimeException("temporary file location already exists but it is not a directory: " + zipDir.absolutePath)
+            }
+        } else {
+            zipDir.mkdir();
+        }
+
+        ZipPacker(zipDir, zipFileName).use{
 
             it.put("format", DATA_FORMAT_VERSION_COLUMNS, DATA_FORMAT_VERSION_VALUES)
 
