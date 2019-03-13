@@ -178,19 +178,19 @@ turn_rates = sqrt(bearing_deltas_x.^2 + bearing_deltas_y.^2) ./ pi*180 ./ [diff(
 # between the bearing direction and the delta-bearing direction (z=ax*by - ay*bx)
 turn_rate_dir = sign(bearing_x .* bearing_deltas_y - bearing_y .* bearing_deltas_x);
 # plot the result
-[ax h1 h2] = plotyy(bearingTimes, bearingValues, bearingTimes, turn_rates .* turn_rate_dir);
-set(h1, 'Marker', '^');
-set(h1, 'Color', 'b');
+[ax h1 h2] = plotyy(bearingTimes, turn_rates .* turn_rate_dir, bearingTimes, bearingValues);
+set(h1, 'Marker', '.');
+set(h1, 'Color', 'k');
 set(h2, 'Marker', '.');
-set(h2, 'Color', 'k');
+set(h2, 'Color', 'b');
 axis(ax(1), [min(pressureTimes) max(pressureTimes)]);
 axis(ax(2), [min(pressureTimes) max(pressureTimes)]);
-set(ax(1), 'YLim', [0 360]);
-set(ax(2), 'YLim', [-20 20]);
-set(ax, {'ycolor'}, {'b';'k'})
+set(ax(1), 'YLim', [-20 20]);
+set(ax(2), 'YLim', [0 360]);
+set(ax, {'ycolor'}, {'k';'b'})
 xlabel('Time [sec]');
-ylabel(ax(1), 'Bearing [deg]');
-ylabel(ax(2), 'Trun rate [deg/sec]');
+ylabel(ax(1), 'Trun rate [deg/sec]');
+ylabel(ax(2), 'Bearing [deg]');
 grid on;
 
 figure(2);
