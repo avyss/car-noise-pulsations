@@ -19,6 +19,8 @@ class LocationCollectingListener(
         val SAMPLING_RATE_COLUMNS_NAMES = arrayOf("sampling_rate [Hz]")
     }
 
+    var dataCount: Int = 0
+
     private val speedCollector = RateAccommodatingSampleCollector(
             samplesPerSecond,
             maxRecordingLengthSec,
@@ -32,6 +34,8 @@ class LocationCollectingListener(
             1)
 
     override fun onLocationChanged(location: Location) {
+        dataCount++
+
         if (location.hasSpeed()) {
             speedCollector.onSampleAcquired(location.elapsedRealtimeNanos, location.speed)
         }

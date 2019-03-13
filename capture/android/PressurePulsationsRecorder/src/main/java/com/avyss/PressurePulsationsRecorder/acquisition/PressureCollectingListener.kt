@@ -13,6 +13,8 @@ class PressureCollectingListener(
         recStartTimeNanos: Long
 ): SensorEventListener {
 
+    var dataCount: Int = 0
+
     private val sampleCollector = RateAccommodatingSampleCollector(
             samplesPerSecond,
             maxRecordingLengthSec,
@@ -28,6 +30,7 @@ class PressureCollectingListener(
         if (event.sensor.type != Sensor.TYPE_PRESSURE) {
             return
         }
+        dataCount++
 
         sampleCollector.onSampleAcquired(event.timestamp, event.values[0])
     }

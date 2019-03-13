@@ -30,6 +30,7 @@ import com.avyss.PressurePulsationsRecorder.exporting.Exporter
 import com.avyss.PressurePulsationsRecorder.settings.SettingsActivity
 
 import java.io.IOException
+import java.text.NumberFormat
 import java.util.Date
 import kotlin.math.roundToInt
 
@@ -55,6 +56,8 @@ class MainActivity : Activity() {
     private var recordingLabel: TextView? = null
     private var countdownTimer: CountDownTimer? = null
     private var progressBar: ProgressBar? = null
+    private var progressPressureDataCount: TextView? = null
+    private var progressGpsDataCount: TextView? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,21 +74,31 @@ class MainActivity : Activity() {
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
-        titleText = findViewById<View>(R.id.TITLE) as EditText
-        startRecordingButton = findViewById<View>(R.id.START_RECORDING) as Button
-        finishRecordingButton = findViewById<View>(R.id.FINISH_RECORDING) as Button
-        recordingLabel = findViewById<View>(R.id.RECORDING_LABEL) as TextView
-        progressBar = findViewById<View>(R.id.PROGRESS_BAR) as ProgressBar
+        titleText = findViewById(R.id.TITLE)
+        startRecordingButton = findViewById(R.id.START_RECORDING)
+        finishRecordingButton = findViewById(R.id.FINISH_RECORDING)
+        recordingLabel = findViewById(R.id.RECORDING_LABEL)
+        progressBar = findViewById(R.id.PROGRESS_BAR)
+        progressPressureDataCount = findViewById(R.id.PRESSURE_SAMPLES_CNT)
+        progressGpsDataCount = findViewById(R.id.GPS_SAMPLES_CNT)
 
         titleText!!.setText(DEFAULT_RECORDING_TITLE)
-        recordingLabel!!.isEnabled = false
-        progressBar!!.isEnabled = false
+
+        updateVisibility(R.id.PROGRESS_INDICATORS_VIEW, false)
 
         startRecordingButton!!.setOnClickListener { doStartRecording() }
         startRecordingButton!!.isEnabled = true
 
         finishRecordingButton!!.setOnClickListener { doStopRecording() }
         finishRecordingButton!!.isEnabled = false
+        finishRecordingButton!!.alpha = 0f
+
+    }
+
+    private fun updateVisibility(componentId: Int, visible: Boolean) {
+        val component = findViewById<View>(componentId)
+        component.isEnabled = visible;
+        component.alpha = if (visible) 1.0f else 0.0f
     }
 
     override fun onResume() {
@@ -185,20 +198,28 @@ class MainActivity : Activity() {
         }
 
         startRecordingButton!!.isEnabled = false
+        startRecordingButton!!.alpha = 0f
         finishRecordingButton!!.isEnabled = true
+        finishRecordingButton!!.alpha = 1.0f
         progressBar!!.max = maxRecordingLengthSec
         recordingLabel!!.isEnabled = true
-        progressBar!!.progress = 0
-        progressBar!!.isEnabled = true
+        recordingLabel!!.alpha = 1.0f
+
+        updateVisibility(R.id.PROGRESS_INDICATORS_VIEW, true)
 
         val maxProgressMillis = maxRecordingLengthSec * 1000L
 
         countdownTimer = object: CountDownTimer(maxProgressMillis, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 progressBar?.progress = ((maxProgressMillis - millisUntilFinished)/1000).toInt()
+                progressPressureDataCount?.setText(formatNumber(pressureCollector!!.dataCount))
+                progressGpsDataCount?.setText(formatNumber(locationCollector!!.dataCount))
             }
             override fun onFinish() {
                 doStopRecording()
+            }
+            fun formatNumber(n: Int): String {
+                return NumberFormat.getIntegerInstance().format(n)
             }
         }
         countdownTimer!!.start()
@@ -248,10 +269,14 @@ class MainActivity : Activity() {
         countdownTimer = null
 
         startRecordingButton!!.isEnabled = true
+        startRecordingButton!!.alpha = 1.0f
         finishRecordingButton!!.isEnabled = false
+        finishRecordingButton!!.alpha = 0f
         recordingLabel!!.isEnabled = false
+        recordingLabel!!.alpha = 0f
+
         progressBar!!.progress = 0
-        progressBar!!.isEnabled = false
+        updateVisibility(R.id.PROGRESS_INDICATORS_VIEW, false)
 
         inRecording = false
         invalidateOptionsMenu()
