@@ -6,7 +6,7 @@
         android:title="Recording Time Limit (minutes)"
         android:inputType="numberDecimal"
         android:numeric="integer"
-        android:defaultValue="120"
+        android:defaultValue="60"
         />
 
     <com.avyss.PressurePulsationsRecorder.settings.RevealingEditTextPreference

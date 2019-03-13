@@ -1,6 +1,5 @@
 package com.avyss.PressurePulsationsRecorder
 
-import android.Manifest
 import android.annotation.TargetApi
 import android.app.Activity
 import android.content.Context
@@ -36,6 +35,10 @@ import kotlin.math.roundToInt
 
 class MainActivity : Activity() {
 
+    private var inRecording: Boolean = false;
+
+    private var optionsMenu: Menu? = null
+
     private var sensorManager: SensorManager? = null
     private var locationManager: LocationManager? = null
     private var wakeLock: WakeLock? = null
@@ -56,7 +59,7 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.v("init", "main activity created")
+        Log.v("PPR-Main", "main activity created")
 
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
@@ -83,36 +86,37 @@ class MainActivity : Activity() {
 
         finishRecordingButton!!.setOnClickListener { doStopRecording() }
         finishRecordingButton!!.isEnabled = false
-
     }
 
     override fun onResume() {
         super.onResume()
-        Log.v("init", "main activity resumed")
+
+        if (prefsSaysUtilizeGps()) {
+            if (supportsRuntimePermissions()) {
+                ensurePermission()
+            }
+        }
+
+        Log.v("PPR-Main", "main activity resumed")
     }
 
     override fun onPause() {
         super.onPause()
-        Log.v("init", "main activity paused")
+        Log.v("PPR-Main", "main activity paused")
     }
 
     @TargetApi(Build.VERSION_CODES.M)
-    private fun ensurePermission(permission: String, requestCode: Int?) {
+    private fun ensurePermission() {
+        val permission = android.Manifest.permission.ACCESS_FINE_LOCATION
+        val requestCode = 1
         if (baseContext.checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
 
             // Should we show an explanation?
             if (ActivityCompat.shouldShowRequestPermissionRationale(this@MainActivity, permission)) {
-
-                Toast.makeText(this,
-                        "$permission needed to obtain the speed and bearing data",
-                        Toast.LENGTH_SHORT)
-                        .show()
-
-                ActivityCompat.requestPermissions(this@MainActivity, arrayOf(permission), requestCode!!)
-
+                // todo: ask asynchronously...
+                ActivityCompat.requestPermissions(this, arrayOf(permission), requestCode)
             } else {
-
-                ActivityCompat.requestPermissions(this@MainActivity, arrayOf(permission), requestCode!!)
+                ActivityCompat.requestPermissions(this, arrayOf(permission), requestCode)
             }
         }
     }
@@ -121,12 +125,25 @@ class MainActivity : Activity() {
         return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
     }
 
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+            // GPS permission granted
+        } else {
+            // GPS permission denied
+            var explanationText =
+                    "Re-enable the GPS-Provided Data in the Settings to record the Speed and Bearing data"
+            Toast.makeText(this, explanationText, Toast.LENGTH_LONG).show()
+
+            val sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this)
+            sharedPrefs.edit().putBoolean(PREF_UTILIZE_GPS, false).commit()
+        }
+    }
+
     private fun doStartRecording() {
 
         val sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this)
         val maxRecordingLengthSec = (sharedPrefs.getString(PREF_MAX_RECORDING_TIME, DEFAULT_MAX_RECORDING_TIME_MINUTES).toFloat() * 60).roundToInt();
         val pressureSamplesPerSecond = sharedPrefs.getString(PREF_PRESSURE_SAMPLING_HZ, DEFAULT_PRESSURE_SAMPLES_PER_SECOND).toFloat();
-        val utilizeGps = sharedPrefs.getBoolean(PREF_UTILIZE_GPS, DEFAULT_UTILIZE_GPS_DATA);
         val speedSamplesPerSecond = sharedPrefs.getString(PREF_SPEED_SAMPING_HZ, DEFAULT_SPEED_SAMPLES_PER_SECOND).toFloat();
 
         recDetails = RecordingDetails(Date())
@@ -154,11 +171,7 @@ class MainActivity : Activity() {
         windDetails = WindDetails();
 
         locationAvailable = false
-        if (utilizeGps) {
-            if (supportsRuntimePermissions()) {
-                ensurePermission(Manifest.permission.ACCESS_FINE_LOCATION, 1)
-            }
-
+        if (prefsSaysUtilizeGps()) {
             try {
                 locationManager!!.requestLocationUpdates(
                         LocationManager.GPS_PROVIDER,
@@ -167,11 +180,7 @@ class MainActivity : Activity() {
                         locationCollector)
                 locationAvailable = true
             } catch (e: SecurityException) {
-                Log.v("init", "The app has no permissions obtain the speed and bearing data through GPS")
-                Toast.makeText(this,
-                        "The app has no permissions obtain the speed and bearing data through GPS",
-                        Toast.LENGTH_LONG)
-                        .show()
+                Log.v("PPR-Main", "the app has no permission to obtain the speed and bearing data through GPS")
             }
         }
 
@@ -194,6 +203,14 @@ class MainActivity : Activity() {
         }
         countdownTimer!!.start()
 
+        inRecording = true;
+        invalidateOptionsMenu()
+        Log.v("PPR-Main", "recording started")
+    }
+
+    private fun prefsSaysUtilizeGps(): Boolean {
+        val sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this)
+        return sharedPrefs.getBoolean(PREF_UTILIZE_GPS, DEFAULT_UTILIZE_GPS_DATA);
     }
 
     private fun doStopRecording() {
@@ -218,7 +235,7 @@ class MainActivity : Activity() {
                     windDetails!!
             )
         } catch (e: IOException) {
-            Log.e("export", "can't export results", e)
+            Log.e("PPR-Main", "can't export results", e)
             throw RuntimeException("can't export results", e)
         }
 
@@ -235,11 +252,33 @@ class MainActivity : Activity() {
         recordingLabel!!.isEnabled = false
         progressBar!!.progress = 0
         progressBar!!.isEnabled = false
+
+        inRecording = false
+        invalidateOptionsMenu()
+
+        Log.v("PPR-Main", "recording stopped")
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
+        optionsMenu = menu
         return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
+        var settingsMenuItem = optionsMenu?.findItem(R.id.action_settings)
+
+        if (inRecording) {
+            // disabled & shaded
+            settingsMenuItem?.isEnabled = false
+            settingsMenuItem?.icon?.alpha = 127
+        } else {
+            // enabled & visible
+            settingsMenuItem?.isEnabled = true
+            settingsMenuItem?.icon?.alpha = 255
+        }
+
+        return super.onPrepareOptionsMenu(menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
@@ -254,7 +293,7 @@ class MainActivity : Activity() {
         private const val DEFAULT_RECORDING_TITLE = "regular conditions"
 
         private const val PREF_MAX_RECORDING_TIME = "pref_MaxRecordingTimeMinutes"
-        private const val DEFAULT_MAX_RECORDING_TIME_MINUTES = "120"
+        private const val DEFAULT_MAX_RECORDING_TIME_MINUTES = "60"
 
         private const val PREF_PRESSURE_SAMPLING_HZ = "pref_PressureSamplesPerSecondHz"
         private const val DEFAULT_PRESSURE_SAMPLES_PER_SECOND = "60.0"
