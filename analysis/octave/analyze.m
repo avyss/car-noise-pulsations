@@ -1,4 +1,4 @@
-function analyze(fileName, timeRange)
+function fileData = analyze(fileName, timeRange)
 
 if nargin() < 2
   timeRange = [-Inf, Inf];
@@ -13,7 +13,7 @@ if nargin() < 2
   endif
 endif
 
-param_SpecgramWindowSec = 5.0; # each spectral window covers <n> seconds
+param_SpecgramWindowSec = 10.0; # each spectral window covers <n> seconds
 param_SpecgramWindowSteps = 3; # <k> overlapping slices per window
 param_LowFrequencyCutoffFreqHz = 0.5; # low pressure frequencies to be ignored 
 param_LowFrequencyCutoffApplyFilter = false;
@@ -24,6 +24,10 @@ fileTitle = extract_recording_title(fileName);
 figTitle = strrep(fileTitle,'_',':');
 
 data = load_recording_data(fileName);
+
+if nargout() > 0
+  fileData = data;
+endif
 
 Fs = data.pressureFs;
 
@@ -92,7 +96,7 @@ if param_LowFrequencyCutoffApplyFilter
 end
 
 # calculate spectrogram 
-window = ceil(param_SpecgramWindowSec * Fs);     
+window = ceil(param_SpecgramWindowSec * Fs);
 step = ceil(window/param_SpecgramWindowSteps);
 [specS, specF, specT] = specgram(pressureValues, 2^nextpow2(window), Fs, window, window-step);
 specT = specT + pressureTimes(1);
@@ -123,6 +127,14 @@ colormap(cool)
 xlabel('Time [sec]')
 ylabel('Frequency [Hz]')
 view(150, 45)
+
+figure(5);
+clf;
+title({figTitle, 'Pressure raw plot'});
+hold on;
+plot(pressureTimes, pressureValues, 'o-');
+xlabel('Time [sec]')
+ylabel('Pressure [mBar]')
 
 figure(1);
 clf;
@@ -214,6 +226,7 @@ ylabel('F');
 display('');
 display(['Finished analysys of: ' fileName]);
 
+return;
 endfunction
 
 function r = overrideNaNs(v)
