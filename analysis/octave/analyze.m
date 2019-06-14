@@ -109,6 +109,10 @@ specS = min(specS, 10^(-3/10));    # clip above -3 dB.
 
 # find frequency with maximum intensity for each window
 minFreqCutoffIdx = min(find(specF >= param_LowFrequencyCutoffFreqHz));
+if (length(minFreqCutoffIdx) == 0)
+  # no high enough frequencies in the spectrum, so show everything
+  minFreqCutoffIdx = 1; 
+endif
 [m, maxIdx] = max(specS(minFreqCutoffIdx : length(specF), :));
 pulsationsFrequencies = specF(maxIdx + minFreqCutoffIdx - 1);
 significantFreqIdx = find(pulsationsFrequencies > specF(minFreqCutoffIdx));
