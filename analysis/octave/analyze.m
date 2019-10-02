@@ -16,7 +16,7 @@ endif
 param_SpecgramWindowSec = 10.0; # each spectral window covers <n> seconds
 param_SpecgramWindowSteps = 3; # <k> overlapping slices per window
 param_LowFrequencyCutoffFreqHz = 0.5; # low pressure frequencies to be ignored 
-param_LowFrequencyCutoffApplyFilter = false;
+param_LowFrequencyCutoffApplyFilter = true;
 param_LowFrequencyCutoffFilterOrder = 5;
 
 display(['Starting analysys of: ' fileName]);
@@ -122,15 +122,15 @@ display('Processing of pressure frequency spectrum done');
 display(['   Frequency resolution: ', num2str(specF(2)), ' Hz']);
 display(['   Maximal detectable frequency: ', num2str(max(specF)), ' Hz']);
 
-figure(4);
-clf;
-title({figTitle, 'Pressure pulsations - spectrogram'});
-hold on;
-surf(specT, specF, log(specS));
-colormap(cool)
-xlabel('Time [sec]')
-ylabel('Frequency [Hz]')
-view(150, 45)
+#figure(4);
+#clf;
+#title({figTitle, 'Pressure pulsations - spectrogram'});
+#hold on;
+#surf(specT, specF, log(specS));
+#colormap(cool)
+#xlabel('Time [sec]')
+#ylabel('Frequency [Hz]')
+#view(150, 45)
 
 figure(5);
 clf;
@@ -224,8 +224,8 @@ if data.hasWind
 end
 
 plot(speedPlotValues, plotFreqs, 'o');
-xlabel('speed');
-ylabel('F');
+xlabel('speed [km/h]');
+ylabel('frequency [Hz]');
 
 display('');
 display(['Finished analysys of: ' fileName]);
