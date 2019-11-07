@@ -30,9 +30,16 @@ class PressureCollectingListener(
         if (event.sensor.type != Sensor.TYPE_PRESSURE) {
             return
         }
+        var pressureValue = event.values[0]
+
+        // filter out unreasonable values of atmospheric pressure
+        if (pressureValue.isInfinite() || pressureValue.isNaN() || (pressureValue <= 0)) {
+            return
+        }
+
         dataCount++
 
-        sampleCollector.onSampleAcquired(event.timestamp, event.values[0])
+        sampleCollector.onSampleAcquired(event.timestamp, pressureValue)
     }
 
     override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
