@@ -2,11 +2,9 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="MainAppTheme" parent="android:Theme.DeviceDefault">
-    </style>
+    <style name="MainAppTheme" parent="@style/Theme.AppCompat"></style>
 
     <!-- Base application theme. -->
-    <style name="MainMenuTheme" parent="android:Theme.DeviceDefault">
-    </style>
+    <style name="MainMenuTheme" parent="@style/Theme.AppCompat"></style>
 
 </resources>

@@ -1,9 +1,9 @@
-package com.avyss.PressurePulsationsRecorder.exporting
+package com.avyss.ppr.exporting
 
 import android.util.Log
 
-import com.avyss.PressurePulsationsRecorder.data.NamedExportableData
-import com.avyss.PressurePulsationsRecorder.data.NamedExportableValuesLine
+import com.avyss.ppr.data.NamedExportableData
+import com.avyss.ppr.data.NamedExportableValuesLine
 
 import java.io.BufferedOutputStream
 import java.io.BufferedWriter
@@ -16,8 +16,8 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 class ZipPacker(
-        containerDirectory: File,
-        fileName: String
+    containerDirectory: File,
+    fileName: String
 ) : Closeable {
 
     companion object {
@@ -27,7 +27,8 @@ class ZipPacker(
     }
 
     val zipFile: File = File(containerDirectory, fileName)
-    private val zos: ZipOutputStream = ZipOutputStream(BufferedOutputStream(FileOutputStream(zipFile)))
+    private val zos: ZipOutputStream =
+        ZipOutputStream(BufferedOutputStream(FileOutputStream(zipFile)))
 
     init {
         zipFile.deleteOnExit()
@@ -80,10 +81,10 @@ class ZipPacker(
 
 
     private inner class StringGeneratingIterator(
-            namedExportableData: NamedExportableData
-    ): Iterator<String> {
+        namedExportableData: NamedExportableData
+    ) : Iterator<String> {
 
-        private val columnNames  = namedExportableData.columnNames
+        private val columnNames = namedExportableData.columnNames
         private val rowsIterator = namedExportableData.rowsIterator
 
         private var writeColumnNamesLine: Boolean = (columnNames != null)

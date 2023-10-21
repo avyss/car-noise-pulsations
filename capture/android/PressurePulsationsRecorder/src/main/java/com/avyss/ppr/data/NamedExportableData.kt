@@ -1,4 +1,4 @@
-package com.avyss.PressurePulsationsRecorder.data
+package com.avyss.ppr.data
 
 interface NamedExportableData : ExportableData {
 

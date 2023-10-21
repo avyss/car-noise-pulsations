@@ -1,9 +1,9 @@
-package com.avyss.PressurePulsationsRecorder.data
+package com.avyss.ppr.data
 
 class NamedExportableValuesLine(
-   private val valuesNames: Array<String>,
-   private val valuesLine: FloatArray
-): NamedExportableData {
+    private val valuesNames: Array<String>,
+    private val valuesLine: FloatArray
+) : NamedExportableData {
 
     override val columnNames: Array<String>
         get() = valuesNames

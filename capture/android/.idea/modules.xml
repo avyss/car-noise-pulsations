@@ -2,8 +2,11 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/PressurePulsationsRecorder/PressurePulsationsRecorder.iml" filepath="$PROJECT_DIR$/PressurePulsationsRecorder/PressurePulsationsRecorder.iml" />
-      <module fileurl="file://$PROJECT_DIR$/android.iml" filepath="$PROJECT_DIR$/android.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/android.iml" filepath="$PROJECT_DIR$/.idea/modules/android.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/PressurePulsationsRecorder/android.PressurePulsationsRecorder.iml" filepath="$PROJECT_DIR$/.idea/modules/PressurePulsationsRecorder/android.PressurePulsationsRecorder.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/PressurePulsationsRecorder/android.PressurePulsationsRecorder.androidTest.iml" filepath="$PROJECT_DIR$/.idea/modules/PressurePulsationsRecorder/android.PressurePulsationsRecorder.androidTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/PressurePulsationsRecorder/android.PressurePulsationsRecorder.main.iml" filepath="$PROJECT_DIR$/.idea/modules/PressurePulsationsRecorder/android.PressurePulsationsRecorder.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/PressurePulsationsRecorder/android.PressurePulsationsRecorder.unitTest.iml" filepath="$PROJECT_DIR$/.idea/modules/PressurePulsationsRecorder/android.PressurePulsationsRecorder.unitTest.iml" />
     </modules>
   </component>
 </project>

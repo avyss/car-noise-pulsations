@@ -1,17 +1,16 @@
-package com.avyss.PressurePulsationsRecorder.acquisition
+package com.avyss.ppr.acquisition
 
 import android.location.Location
 import android.location.LocationListener
-import android.os.Bundle
-import com.avyss.PressurePulsationsRecorder.data.NamedExportableData
-import com.avyss.PressurePulsationsRecorder.data.NamedExportableValuesLine
-import com.avyss.PressurePulsationsRecorder.data.RateAccommodatingSampleCollector
+import com.avyss.ppr.data.NamedExportableData
+import com.avyss.ppr.data.NamedExportableValuesLine
+import com.avyss.ppr.data.RateAccommodatingSampleCollector
 
 class LocationCollectingListener(
-        private val samplesPerSecond: Float,
-        maxRecordingLengthSec: Int,
-        recStartTimeNanos: Long
-): LocationListener {
+    private val samplesPerSecond: Float,
+    maxRecordingLengthSec: Int,
+    recStartTimeNanos: Long
+) : LocationListener {
 
     companion object {
         val SPEED_COLUMNS_NAMES: Array<String> = arrayOf("time [sec]", "speed [km/h]")
@@ -22,16 +21,18 @@ class LocationCollectingListener(
     var dataCount: Int = 0
 
     private val speedCollector = RateAccommodatingSampleCollector(
-            samplesPerSecond,
-            maxRecordingLengthSec,
-            recStartTimeNanos,
-            1)
+        samplesPerSecond,
+        maxRecordingLengthSec,
+        recStartTimeNanos,
+        1
+    )
 
     private val bearingCollector = RateAccommodatingSampleCollector(
-            samplesPerSecond,
-            maxRecordingLengthSec,
-            recStartTimeNanos,
-            1)
+        samplesPerSecond,
+        maxRecordingLengthSec,
+        recStartTimeNanos,
+        1
+    )
 
     override fun onLocationChanged(location: Location) {
         dataCount++
@@ -43,8 +44,6 @@ class LocationCollectingListener(
             bearingCollector.onSampleAcquired(location.elapsedRealtimeNanos, location.bearing)
         }
     }
-
-    override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {}
 
     override fun onProviderEnabled(provider: String) {}
 
@@ -59,6 +58,9 @@ class LocationCollectingListener(
     }
 
     fun exportableFs(): NamedExportableData {
-        return NamedExportableValuesLine(SAMPLING_RATE_COLUMNS_NAMES, floatArrayOf(samplesPerSecond))
+        return NamedExportableValuesLine(
+            SAMPLING_RATE_COLUMNS_NAMES,
+            floatArrayOf(samplesPerSecond)
+        )
     }
 }

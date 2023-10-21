@@ -1,7 +1,6 @@
-package com.avyss.PressurePulsationsRecorder
+package com.avyss.ppr
 
 import android.annotation.TargetApi
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -10,33 +9,36 @@ import android.hardware.SensorManager
 import android.location.LocationManager
 import android.os.*
 import android.os.PowerManager.WakeLock
-import android.preference.PreferenceManager
-import android.support.v4.app.ActivityCompat
+import androidx.preference.PreferenceManager
+import androidx.core.app.ActivityCompat
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import com.avyss.ppr.R
 
-import com.avyss.PressurePulsationsRecorder.acquisition.PressureCollectingListener
-import com.avyss.PressurePulsationsRecorder.acquisition.RecordingDetails
-import com.avyss.PressurePulsationsRecorder.acquisition.LocationCollectingListener
-import com.avyss.PressurePulsationsRecorder.acquisition.WindDetails
-import com.avyss.PressurePulsationsRecorder.exporting.Exporter
-import com.avyss.PressurePulsationsRecorder.settings.SettingsActivity
+import com.avyss.ppr.acquisition.PressureCollectingListener
+import com.avyss.ppr.acquisition.RecordingDetails
+import com.avyss.ppr.acquisition.LocationCollectingListener
+import com.avyss.ppr.acquisition.WindDetails
+import com.avyss.ppr.exporting.Exporter
+import com.avyss.ppr.settings.SettingsActivity
 
 import java.io.IOException
 import java.text.NumberFormat
 import java.util.Date
 import kotlin.math.roundToInt
 
-class MainActivity : Activity() {
+class MainActivity : AppCompatActivity() {
 
-    private var inRecording: Boolean = false;
+    private var inRecording: Boolean = false
 
     private var optionsMenu: Menu? = null
 
@@ -64,12 +66,13 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         Log.v("PPR-Main", "main activity created")
 
-        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, false)
 
         setContentView(R.layout.layout_main)
 
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, javaClass.name)
+        wakeLock =
+            powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "PressureRecorder:recording")
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
@@ -97,7 +100,7 @@ class MainActivity : Activity() {
 
     private fun updateVisibility(componentId: Int, visible: Boolean) {
         val component = findViewById<View>(componentId)
-        component.isEnabled = visible;
+        component.isEnabled = visible
         component.alpha = if (visible) 1.0f else 0.0f
     }
 
@@ -125,7 +128,11 @@ class MainActivity : Activity() {
         if (baseContext.checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
 
             // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this@MainActivity, permission)) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(
+                    this@MainActivity,
+                    permission
+                )
+            ) {
                 // todo: ask asynchronously...
                 ActivityCompat.requestPermissions(this, arrayOf(permission), requestCode)
             } else {
@@ -138,62 +145,79 @@ class MainActivity : Activity() {
         return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
             // GPS permission granted
         } else {
             // GPS permission denied
-            var explanationText =
-                    "Re-enable the GPS-Provided Data in the Settings to record the Speed and Bearing data"
-            Toast.makeText(this, explanationText, Toast.LENGTH_LONG).show()
-
             val sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this)
-            sharedPrefs.edit().putBoolean(PREF_UTILIZE_GPS, false).commit()
+            sharedPrefs.edit().putBoolean(PREF_UTILIZE_GPS, false).apply()
+
+            val explanationText =
+                "Re-enable the GPS-Provided Data in the Settings to record the Speed and Bearing data"
+            Toast.makeText(this, explanationText, Toast.LENGTH_LONG).show()
         }
     }
 
     private fun doStartRecording() {
 
         val sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this)
-        val maxRecordingLengthSec = (sharedPrefs.getString(PREF_MAX_RECORDING_TIME, DEFAULT_MAX_RECORDING_TIME_MINUTES).toFloat() * 60).roundToInt();
-        val pressureSamplesPerSecond = sharedPrefs.getString(PREF_PRESSURE_SAMPLING_HZ, DEFAULT_PRESSURE_SAMPLES_PER_SECOND).toFloat();
-        val speedSamplesPerSecond = sharedPrefs.getString(PREF_SPEED_SAMPING_HZ, DEFAULT_SPEED_SAMPLES_PER_SECOND).toFloat();
+        val maxRecordingLengthSec =
+            (sharedPrefs.getString(PREF_MAX_RECORDING_TIME, DEFAULT_MAX_RECORDING_TIME_MINUTES)!!
+                .toFloat() * 60).roundToInt()
+        val pressureSamplesPerSecond =
+            sharedPrefs.getString(PREF_PRESSURE_SAMPLING_HZ, DEFAULT_PRESSURE_SAMPLES_PER_SECOND)!!
+                .toFloat()
+        val speedSamplesPerSecond =
+            sharedPrefs.getString(PREF_SPEED_SAMPING_HZ, DEFAULT_SPEED_SAMPLES_PER_SECOND)!!
+                .toFloat()
 
         recDetails = RecordingDetails(Date())
         val recStartTimeNanos = SystemClock.elapsedRealtimeNanos()
 
-        wakeLock!!.acquire()
+        wakeLock!!.acquire((maxRecordingLengthSec + 1) * 1000L)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         pressureCollector = PressureCollectingListener(
-                pressureSamplesPerSecond,
-                maxRecordingLengthSec,
-                recStartTimeNanos
+            pressureSamplesPerSecond,
+            maxRecordingLengthSec,
+            recStartTimeNanos
         )
 
         sensorManager!!.registerListener(
-                pressureCollector,
-                sensorManager!!.getDefaultSensor(Sensor.TYPE_PRESSURE),
-                SensorManager.SENSOR_DELAY_FASTEST)
-
-        locationCollector = LocationCollectingListener(
-                speedSamplesPerSecond,
-                maxRecordingLengthSec,
-                recStartTimeNanos
+            pressureCollector,
+            sensorManager!!.getDefaultSensor(Sensor.TYPE_PRESSURE),
+            SensorManager.SENSOR_DELAY_FASTEST
         )
 
-        windDetails = WindDetails();
+        locationCollector = LocationCollectingListener(
+            speedSamplesPerSecond,
+            maxRecordingLengthSec,
+            recStartTimeNanos
+        )
+
+        windDetails = WindDetails()
 
         locationAvailable = false
         if (prefsSaysUtilizeGps()) {
             try {
                 locationManager!!.requestLocationUpdates(
-                        LocationManager.GPS_PROVIDER,
-                        Math.round(1000f / speedSamplesPerSecond / 2f).toLong(),
-                        0f,
-                        locationCollector)
+                    LocationManager.GPS_PROVIDER,
+                    (1000f / speedSamplesPerSecond / 2f).roundToInt().toLong(),
+                    0f,
+                    locationCollector!!
+                )
                 locationAvailable = true
             } catch (e: SecurityException) {
-                Log.v("PPR-Main", "the app has no permission to obtain the speed and bearing data through GPS")
+                Log.v(
+                    "PPR-Main",
+                    "the app has no permission to obtain the speed and bearing data through GPS"
+                )
             }
         }
 
@@ -209,37 +233,40 @@ class MainActivity : Activity() {
 
         val maxProgressMillis = maxRecordingLengthSec * 1000L
 
-        countdownTimer = object: CountDownTimer(maxProgressMillis, 1000) {
+        countdownTimer = object : CountDownTimer(maxProgressMillis, 1000) {
             override fun onTick(millisUntilFinished: Long) {
-                progressBar?.progress = ((maxProgressMillis - millisUntilFinished)/1000).toInt()
-                progressPressureDataCount?.setText(formatNumber(pressureCollector!!.dataCount))
-                progressGpsDataCount?.setText(formatNumber(locationCollector!!.dataCount))
+                progressBar?.progress = ((maxProgressMillis - millisUntilFinished) / 1000).toInt()
+                progressPressureDataCount?.text = formatNumber(pressureCollector!!.dataCount)
+                progressGpsDataCount?.text = formatNumber(locationCollector!!.dataCount)
             }
+
             override fun onFinish() {
                 doStopRecording()
             }
+
             fun formatNumber(n: Int): String {
                 return NumberFormat.getIntegerInstance().format(n)
             }
         }
         countdownTimer!!.start()
 
-        inRecording = true;
+        inRecording = true
         invalidateOptionsMenu()
         Log.v("PPR-Main", "recording started")
     }
 
     private fun prefsSaysUtilizeGps(): Boolean {
         val sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this)
-        return sharedPrefs.getBoolean(PREF_UTILIZE_GPS, DEFAULT_UTILIZE_GPS_DATA);
+        return sharedPrefs.getBoolean(PREF_UTILIZE_GPS, DEFAULT_UTILIZE_GPS_DATA)
     }
 
     private fun doStopRecording() {
         wakeLock!!.release()
+        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         sensorManager!!.unregisterListener(pressureCollector)
         if (locationAvailable) {
-            locationManager!!.removeUpdates(locationCollector)
+            locationManager!!.removeUpdates(locationCollector!!)
         }
 
         val title = titleText!!.text.toString()
@@ -249,11 +276,11 @@ class MainActivity : Activity() {
 
         try {
             exporter.exportResults(
-                    baseContext,
-                    recDetails!!,
-                    pressureCollector!!,
-                    locationCollector!!,
-                    windDetails!!
+                baseContext,
+                recDetails!!,
+                pressureCollector!!,
+                locationCollector!!,
+                windDetails!!
             )
         } catch (e: IOException) {
             Log.e("PPR-Main", "can't export results", e)
@@ -291,7 +318,7 @@ class MainActivity : Activity() {
     }
 
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
-        var settingsMenuItem = optionsMenu?.findItem(R.id.action_settings)
+        val settingsMenuItem = optionsMenu?.findItem(R.id.action_settings)
 
         if (inRecording) {
             // disabled & shaded
@@ -306,12 +333,12 @@ class MainActivity : Activity() {
         return super.onPrepareOptionsMenu(menu)
     }
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        when (item?.itemId) {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
             R.id.action_settings -> startActivity(Intent(this, SettingsActivity::class.java))
             else -> return super.onOptionsItemSelected(item)
         }
-        return true;
+        return true
     }
 
     companion object {

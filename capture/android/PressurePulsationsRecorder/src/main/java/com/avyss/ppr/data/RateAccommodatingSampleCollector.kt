@@ -1,6 +1,4 @@
-package com.avyss.PressurePulsationsRecorder.data
-
-import android.util.Log
+package com.avyss.ppr.data
 
 /**
  * Collects samples and assigns them to eqi-sized time slots, thus producing
@@ -12,10 +10,10 @@ import android.util.Log
  * Each sample contains a vector of (at least one) float values.
  */
 class RateAccommodatingSampleCollector(
-        val samplesPerSecond: Float,
-        maxRecordingLengthSec: Int,
-        private val recStartTimeNanos: Long,
-        private val nValuesPerSample: Int
+    val samplesPerSecond: Float,
+    maxRecordingLengthSec: Int,
+    private val recStartTimeNanos: Long,
+    private val nValuesPerSample: Int
 ) {
 
     companion object {
@@ -23,8 +21,8 @@ class RateAccommodatingSampleCollector(
     }
 
     private val maxNSamples = Math.round(maxRecordingLengthSec * samplesPerSecond)
-    private val counts      = IntArray(maxNSamples)
-    private val sums        = Array(nValuesPerSample) {FloatArray(maxNSamples)}
+    private val counts = IntArray(maxNSamples)
+    private val sums = Array(nValuesPerSample) { FloatArray(maxNSamples) }
 
     fun onSampleAcquired(timestamp: Long, vararg sampledValues: Float) {
 
@@ -50,7 +48,7 @@ class RateAccommodatingSampleCollector(
     }
 
     fun getExportable(): ExportableData {
-        return object: ExportableData {
+        return object : ExportableData {
 
             override val rowsIterator: Iterator<FloatArray>
                 get() = NonemptySampleRangeIterator()
@@ -58,7 +56,7 @@ class RateAccommodatingSampleCollector(
         }
     }
 
-    private inner class NonemptySampleRangeIterator: Iterator<FloatArray> {
+    private inner class NonemptySampleRangeIterator : Iterator<FloatArray> {
 
         private var currSampleIdx: Int
         private var lastSampleIdx: Int
@@ -74,7 +72,7 @@ class RateAccommodatingSampleCollector(
 
             if (currSampleIdx == maxNSamples) {
                 // if all slots are empty - the iterator will return no data
-                lastSampleIdx  = currSampleIdx - 1
+                lastSampleIdx = currSampleIdx - 1
             } else {
 
                 // find index of last slot having a sample
@@ -101,9 +99,9 @@ class RateAccommodatingSampleCollector(
             retData[0] = time
             for (n in 0 until nValuesPerSample) {
                 if (counts[currSampleIdx] == 0) {
-                    retData[n+1] = java.lang.Float.NaN
+                    retData[n + 1] = java.lang.Float.NaN
                 } else {
-                    retData[n+1]= sums[n][currSampleIdx] / counts[currSampleIdx]
+                    retData[n + 1] = sums[n][currSampleIdx] / counts[currSampleIdx]
                 }
             }
 

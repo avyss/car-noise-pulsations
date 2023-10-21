@@ -1,0 +1,25 @@
+Pressure Pulsations Recorder Data Privacy Policy
+
+
+DATA ACQUISITION
+The application obtains the following data from the device it runs on:
+  * Atmospheric pressure
+  * High Accuracy Location data
+The application uses the High Accuracy Location data to extract the speed and direction of movement of the device.
+The location part of the information is discarded and not collected by the application.
+
+STORED DATA
+The application stores the following data on the device:
+  * Atmospheric pressure
+  * Speed and direction of movement
+
+SHARING OF THE DATA
+The application does not automatically share the stored data with the developers or any third party.
+
+The application provides the end user with a way to send the stored data to a desirable destination
+by using the device's standard "Share" action. After the stored data was shared this way, the application
+has no control over the shared copy.
+
+REMOVAL OF THE DATA
+To remove the data stored on the device the end user can un-install the application from the device.
+To remove the data that was shared by the user, the user must contact the entity that has received the copy of the data.

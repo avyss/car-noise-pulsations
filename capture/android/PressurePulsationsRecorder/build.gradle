@@ -1,14 +1,16 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
+def preference_version = "1.2.1"
+def appcompat_version = "1.6.1"
+
 android {
-    compileSdkVersion 26
-    buildToolsVersion "28.0.3"
+    compileSdkVersion = 34
 
     defaultConfig {
         applicationId "com.avyss.PressurePulsationsRecorder"
         minSdkVersion 17
-        targetSdkVersion 26
+        targetSdkVersion 34
     }
 
     buildTypes {
@@ -21,12 +23,18 @@ android {
         sourceCompatibility = '1.8'
         targetCompatibility = '1.8'
     }
+    namespace 'com.avyss.ppr'
 }
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation "com.android.support:appcompat-v7:${rootProject.ext.supportLibVersion}"
+    implementation "androidx.appcompat:appcompat:$appcompat_version"
+    implementation "androidx.appcompat:appcompat-resources:$appcompat_version"
+
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+
+    //implementation "androidx.preference:preference:$preference_version"
+    implementation "androidx.preference:preference-ktx:$preference_version"
 }

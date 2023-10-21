@@ -13,10 +13,10 @@ if nargin() < 2
   endif
 endif
 
-param_SpecgramWindowSec = 10.0; # each spectral window covers <n> seconds
+param_SpecgramWindowSec = 2.0; # each spectral window covers <n> seconds
 param_SpecgramWindowSteps = 3; # <k> overlapping slices per window
 param_LowFrequencyCutoffFreqHz = 0.5; # low pressure frequencies to be ignored 
-param_LowFrequencyCutoffApplyFilter = true;
+param_LowFrequencyCutoffApplyFilter = false;
 param_LowFrequencyCutoffFilterOrder = 5;
 
 display(['Starting analysys of: ' fileName]);

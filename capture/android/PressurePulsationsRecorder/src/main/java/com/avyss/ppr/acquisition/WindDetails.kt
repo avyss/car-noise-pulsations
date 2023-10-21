@@ -1,7 +1,7 @@
-package com.avyss.PressurePulsationsRecorder.acquisition
+package com.avyss.ppr.acquisition
 
-import com.avyss.PressurePulsationsRecorder.data.NamedExportableData
-import com.avyss.PressurePulsationsRecorder.data.NamedExportableValuesLine
+import com.avyss.ppr.data.NamedExportableData
+import com.avyss.ppr.data.NamedExportableValuesLine
 
 class WindDetails {
     companion object {
